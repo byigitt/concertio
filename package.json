@@ -20,6 +20,8 @@
     "smoke": "tsx --env-file-if-exists=.env.local scripts/smoke.ts",
     "test:pipeline": "tsx --env-file-if-exists=.env.local scripts/test-pagination.ts",
     "test:reach": "tsx --env-file-if-exists=.env.local scripts/test-reach.ts",
+    "test:jobs": "tsx --env-file-if-exists=.env.local scripts/test-jobs.ts",
+    "test:redaction": "tsx scripts/test-redaction.ts",
     "test:strings": "tsx --env-file-if-exists=.env.local scripts/check-strings.ts",
     "check:lastfm": "tsx --env-file-if-exists=.env.local scripts/check-lastfm.ts",
     "check:geocode": "tsx --env-file-if-exists=.env.local scripts/check-geocode.ts"

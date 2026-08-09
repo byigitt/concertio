@@ -69,9 +69,8 @@ export function HomePanel({
                 </button>
               </p>
               <p id="address-hint">
-                example: <code>mission district, san francisco</code>. adding the city and
-                country makes the lookup unambiguous. you do not have to give a street number; a
-                neighbourhood is enough.
+                like <code>mission district, san francisco</code>. add city and country. street
+                number not needed.
               </p>
             </fieldset>
           </form>
@@ -110,9 +109,8 @@ export function HomePanel({
               </button>
             </p>
             <p id="secret-hint">
-              a home address is sensitive data and the app has no login yet, so the location
-              feature is protected by a key. the key lives in the{' '}
-              <code>CONCERTIO_EDIT_SECRET</code> environment variable.
+              home address is sensitive, app has no login yet, so key guards it. key sits in{' '}
+              <code>CONCERTIO_EDIT_SECRET</code>.
             </p>
           </fieldset>
         </form>
@@ -124,8 +122,7 @@ export function HomePanel({
           {state.resolved ? (
             <>
               {' '}
-              resolved address: <strong>{state.resolved}</strong>. if that is wrong, write it out
-              in more detail and save again.
+              got: <strong>{state.resolved}</strong>. wrong? write more detail, save again.
             </>
           ) : null}
         </p>

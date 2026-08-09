@@ -6,7 +6,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'concertio',
   description:
-    'finds upcoming concerts by the artists you actually listen to. phase 0: sf bay area.',
+    'concerts by bands you actually play. last.fm in, ticketmaster out. sf bay area.',
 };
 
 /**
@@ -33,8 +33,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             </strong>
           </p>
           <p>
-            personal concert tracking · phase 0 · sf bay area ·{' '}
-            <a href="/api/health">status</a>
+            phase 0 · sf bay area · <a href="/api/health">health</a>
           </p>
           <nav aria-label="site">
             <ul>
@@ -42,10 +41,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 <a href="/">start</a>
               </li>
               <li>
-                <a href="/me">my matches</a>
+                <a href="/me">matches</a>
               </li>
               <li>
-                <a href="/metro/sf-bay-area">sf bay area calendar</a>
+                <a href="/jobs">queue</a>
+              </li>
+              <li>
+                <a href="/metro/sf-bay-area">calendar</a>
               </li>
             </ul>
           </nav>
@@ -59,11 +61,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
         <footer>
           <p>
-            no notifications, no email; you open the page and look. event data from{' '}
-            <a href="https://www.ticketmaster.com/">ticketmaster</a>, taste signal from{' '}
-            <a href="https://www.last.fm/">last.fm</a>, artist identity from{' '}
-            <a href="https://musicbrainz.org/">musicbrainz</a>, address lookup by{' '}
-            <a href="https://nominatim.openstreetmap.org/">openstreetmap nominatim</a>.
+            no mail, no push. open page, look. data:{' '}
+            <a href="https://www.ticketmaster.com/">ticketmaster</a>,{' '}
+            <a href="https://www.last.fm/">last.fm</a>,{' '}
+            <a href="https://musicbrainz.org/">musicbrainz</a>,{' '}
+            <a href="https://nominatim.openstreetmap.org/">nominatim</a>.
           </p>
         </footer>
       </body>

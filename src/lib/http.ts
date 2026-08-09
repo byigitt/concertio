@@ -33,14 +33,42 @@ export class SourceQuotaError extends Error {
  * MusicBrainz url-lookup 404'unu normal akis olarak ayirt edebilir:
  * `instanceof HttpStatusError && e.status === 404`.
  */
+/**
+ * URL'deki gizli parametreleri maskeler.
+ *
+ * Neden zorunlu: Ticketmaster `?apikey=`, Last.fm `?api_key=` query param'i
+ * kullaniyor. Bu URL hata mesajina girer, mesaj `ingest_job.last_error`'a
+ * yazilir ve `/jobs` sayfasi PUBLIC. Redaksiyon olmadan API anahtari
+ * herkese gorunur olurdu. Kaynakta maskeliyoruz ki hicbir cagiran unutamasin.
+ */
+const SECRET_PARAMS = ['apikey', 'api_key', 'api_sig', 'sk', 'token', 'client_secret'];
+
+export function redactUrl(raw: string): string {
+  try {
+    const url = new URL(raw);
+    for (const key of SECRET_PARAMS) {
+      if (url.searchParams.has(key)) url.searchParams.set(key, 'REDACTED');
+    }
+    return url.toString();
+  } catch {
+    // URL parse edilemiyorsa host/path bile guvenli degil: hic gosterme.
+    return '(unparseable url)';
+  }
+}
+
 export class HttpStatusError extends Error {
+  /** Maskelenmis URL. Ham URL BILINCLI olarak saklanmiyor. */
+  readonly url: string;
+
   constructor(
     readonly source: SourceId,
     readonly status: number,
-    readonly url: string,
+    url: string,
     readonly bodySnippet: string,
   ) {
-    super(`${source} HTTP ${status} (${url}): ${bodySnippet}`);
+    const safe = redactUrl(url);
+    super(`${source} HTTP ${status} (${safe}): ${bodySnippet}`);
+    this.url = safe;
     this.name = 'HttpStatusError';
   }
 }
@@ -118,8 +146,8 @@ export async function fetchJson<T>(
         if (error instanceof ZodError) {
           const first = error.issues[0];
           throw new Error(
-            `${opts.source} sema hatasi (${url}): ` +
-              (first ? `${first.path.join('.')} — ${first.message}` : 'bilinmeyen issue'),
+            `${opts.source} schema error (${redactUrl(url)}): ` +
+              (first ? `${first.path.join('.')} — ${first.message}` : 'unknown issue'),
           );
         }
         throw error;

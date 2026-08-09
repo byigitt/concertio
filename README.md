@@ -1,13 +1,18 @@
 # concertio
 
 Match Last.fm taste against upcoming concerts in area. First target SF Bay Area, architecture open
-to whole US. Design and research notes in `docs/` (gitignored, local).
+to whole US. Research notes live in `docs/`, gitignored and local — so decision reasons are inlined
+below, not linked.
 
-- Event data: **Ticketmaster Discovery** (primary). Songkick out of scope, ToS — `docs/07` K-2.
-- Taste data: **Last.fm** (primary, no OAuth). Spotify optional — `docs/07` K-1.
-- Artist identity: **MusicBrainz** MBID + `url-rels` bridge — `docs/07` K-3.
-- Crawl direction: **artist-first**, not metro scan — `docs/07` K-4.
-- No notification, no email — `docs/07` K-8.
+- Event data: **Ticketmaster Discovery** (primary). Songkick out: API ToS forbids caching past 24 h
+  and forbids mixing its data with any other concert source, so a multi-source app is illegal there.
+- Taste data: **Last.fm** (primary, no OAuth — `api_key` + username is enough). Spotify optional:
+  dev mode caps at 5 allowlisted users, extended quota now wants a company and ~250k MAU.
+- Artist identity: **MusicBrainz** MBID + `url-rels` bridge. One lookup returns spotify/songkick/
+  lastfm/ticketing ids together. No url-rel = fall back to exact name, then trigram + review queue.
+- Crawl direction: **artist-first**, not metro scan. US has 1,604 metro areas; one query per artist
+  covers that artist everywhere, and geography gets filtered locally.
+- No notification, no email. Open page and look.
 - Interface: **strict Web Brutalism** — browser defaults are design, CSS 690 bytes (below).
 
 ## Setup
@@ -38,6 +43,8 @@ pnpm smoke          # NO API key — verifies ingest/dedup/matching/query chain 
 pnpm test:pipeline  # NO API key, NO network — paging cap + cancel gate tests
 pnpm test:reach     # NO API key, NO network — distance + reach tier tests
 pnpm test:strings   # NO API key, NO network — emitted UI strings english?
+pnpm test:jobs      # NO API key, NO network (needs DB) — queue claim/lease/resume tests
+pnpm test:redaction # NO API key, NO network, NO DB — api key never lands in error text
 pnpm check:lastfm   # live Last.fm check: signal count + MBID fill rate
 pnpm check:geocode  # live Nominatim check: address -> coordinates
 pnpm faz0           # one user + one metro, end to end real data (needs both API keys)
@@ -107,14 +114,51 @@ event would get cancelled), and a cancelled event returning with same payload fl
 
 All three guards under `pnpm test:pipeline`: 33 checks, no network, no API key.
 
+## Queue
+
+No terminal needed. Type a last.fm username on `/jobs` (or `/me`), pick area, hit queue. Worker
+picks it up, page shows progress. `pnpm faz0` still works and calls the **same** `refreshUser`
+function, so CLI and worker cannot drift.
+
+Rules that keep it honest:
+
+- **One worker, one job.** MusicBrainz allows 1 req/sec, so parallel runs are banned. Claim uses
+  `FOR UPDATE SKIP LOCKED`, so a second worker gets nothing instead of the same job.
+- **Lease token.** Each claim mints a uuid and every worker write carries it in `WHERE`. Heartbeat
+  alone is not enough: worker A can hang inside a slow HTTP call until its heartbeat goes stale, B
+  reclaims, then A wakes and overwrites B's progress. Token mismatch = 0 rows = A stops.
+- **Frozen worklist.** A long job splits across leases, and the resume cursor is an index, so the
+  scored artist list is snapshotted into the job row on first lease. Refetching last.fm each lease
+  would reshuffle scores and silently skip or double-process artists.
+- **Cursor advances only on settled items.** Resolved, sent to review, or error recorded — those
+  advance. An unexpected throw does not, else a requeue would skip that artist forever.
+- **Split is not failure.** Budget exhausted returns the job to `queued` and gives the attempt back,
+  so a long job never burns `MAX_ATTEMPTS`. Real errors requeue up to 3 tries, then `failed`.
+- **Rate cap instead of auth.** Anyone can queue any public last.fm username — nothing secret is
+  written, home address is a separate key-guarded feature. 30 min cooldown per user, queue depth 20,
+  so third-party quotas survive.
+- **Errors never leak keys.** Ticketmaster and Last.fm carry the key in the query string, that URL
+  lands in error text, and public `/jobs` shows error text. `HttpStatusError` redacts secret params
+  at construction and the page prints only a coarse class.
+
+`pnpm test:jobs` covers claim atomicity, lease fencing, stale reclaim, resume, and the attempt cap:
+26 checks. `pnpm test:redaction` proves no key survives into an error: 11 checks. Neither needs
+network or an API key (`test:jobs` needs the DB).
+
+End to end on a real profile (`ozgcetiin`, 20 s budget to force splitting): queued from the page,
+four leases `20/60 → 43/60 → 58/60 → done`, same job id throughout, 758 signals → 60 artists → 13
+matches on `/me`.
+
 ## Routes
 
 | Route | Job |
 |---|---|
-| `/` | pitch + active areas |
+| `/` | pitch + queue form + active areas |
+| `/jobs` | queue: submit a refresh, watch progress |
 | `/me?u=<lastfm>&metro=<slug>&reach=<tier>` | personal match list + reach filter |
 | `/metro/[slug]` | upcoming concerts in area |
 | `/api/health` | schema readiness check; post-deploy verification point |
+| `/api/jobs/run` | queue worker; `vercel.json`: every 5 min |
 | `/api/cron/ingest-events` | `vercel.json`: every 6 hours, 30-day chunks |
 | `/api/cron/refresh-taste` | `vercel.json`: daily |
 
@@ -152,7 +196,7 @@ Browser defaults are the design. Consequences:
 ## Layout
 
 ```
-migrations/0001_init.sql    exact copy of docs/05 §1 DDL — update both together
+migrations/0001_init.sql    schema of record; local docs/05 holds same DDL — update both together
 migrations/0002_home_location.sql  home location columns + distance_m() + venue.country
 src/lib/types.ts           shared contract (EventSource, TasteSource, RawEvent, ...)
 src/lib/db/client.ts       pool/sql/sqlOne/tx — DB access only from here
@@ -188,25 +232,33 @@ pnpm deploy:prod
 ```
 
 `pnpm deploy:prod` = `pnpm deploy:gate && vercel deploy --prod`. Gate (`scripts/predeploy.ts`)
-applies migrations, then verifies schema: required 13 tables, `norm_name` + `distance_m`, 7
-`home_*` columns on `app_user`, and that functions **return right answers**
-(`distance_m` on known distance, `norm_name('The Sigur Rós') = 'sigur ros'`). Anything missing gets
-listed by name and `exit 1`; `&&` chain breaks, so `vercel deploy` never runs. To stop you pointing
-at local instead of prod by accident, `localhost` connection gets refused without `--allow-local`.
+applies migrations, then verifies schema: 14 tables, `norm_name` + `distance_m`, 7 `home_*` columns
+on `app_user`, 6 queue columns on `ingest_job` (`lease_token`, `cursor`, `heartbeat_at`, …), the two
+queue indexes, and that functions **return right answers** (`distance_m` on known distance,
+`norm_name('The Sigur Rós') = 'sigur ros'`). Anything missing gets listed by name and `exit 1`; `&&`
+chain breaks, so `vercel deploy` never runs. To stop you pointing at local instead of prod by
+accident, `localhost` connection gets refused without `--allow-local`.
 
 `GET /api/health` does not replace that, it **complements** it: gate prevents deploy, health
-endpoint diagnoses an install already live (`200 {"ready":true}` or `503` + `missingTables`). On a
+endpoint diagnoses an install already live (`200 {"ready":true}` or `503` + named problems). On a
 deploy with migrations skipped, `/me` throws opaque 500 while health endpoint names what is
 missing.
+
+Both call the **same** `checkSchema()` in `src/lib/schema-check.ts`. Two lists drifted once: queue
+shipped, gate learned `ingest_job`, health kept checking only the table name and called a table
+without `lease_token` ready. One list cannot drift from itself. Checked on a table with the column
+dropped: gate and health both name `ingest_job.lease_token` and `ingest_job_one_active`.
 
 Migrations run idempotent from zero (verified on empty DB: 14 tables, `norm_name` + `distance_m`,
 8 `home_*` columns, seed metro). `pnpm db:reset` works only on `localhost` connection — dropping
 prod schema is impossible.
 
-Hobby plan closed to commercial use; going commercial needs Pro (`docs/09-free-tier.md` §D).
+Hobby plan closed to commercial use ("Hobby teams are restricted to non-commercial personal use
+only"), so going commercial needs Pro.
 
 ## Attribution
 
 Every page showing Ticketmaster data carries "Event data by Ticketmaster" and ticket links go
-straight to Ticketmaster. Taste signal credits Last.fm, identity resolution credits MusicBrainz.
-Detail: `docs/06-legal-and-tos.md`.
+straight to Ticketmaster. Taste signal credits Last.fm, identity resolution credits MusicBrainz,
+address lookup credits OpenStreetMap Nominatim. Last.fm ToS assumes non-commercial use; going paid
+needs `partners@last.fm` approval first. MusicBrainz needs meaningful `User-Agent` and 1 req/sec.

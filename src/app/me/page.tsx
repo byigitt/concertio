@@ -1,3 +1,4 @@
+import { QueueForm } from '@/app/jobs/queue-form';
 import { HomePanel } from '@/app/me/home-panel';
 import { hasEditAccess, locationFeatureEnabled } from '@/lib/edit-access';
 import {
@@ -63,10 +64,7 @@ export default async function MePage({
     return (
       <>
         <h1>username required</h1>
-        <p>
-          this page works by reading a last.fm profile. type the username; no password and no
-          authorization needed.
-        </p>
+        <p>reads a public last.fm profile. username only, no password.</p>
         <UserForm metroSlug={metros[0]?.slug} />
       </>
     );
@@ -82,12 +80,12 @@ export default async function MePage({
         <p>
           {requestedSlug ? (
             <>
-              there is no area called <code>{requestedSlug}</code>.
+              no area <code>{requestedSlug}</code>.
             </>
           ) : (
-            'no active area in the database.'
+            'no active area.'
           )}{' '}
-          active areas are listed on the <a href="/">start page</a>.
+          see <a href="/">start</a>.
         </p>
       </>
     );
@@ -131,8 +129,13 @@ export default async function MePage({
           </>
         ) : null}
         {' · '}
-        <a href="/me">another user</a>
+        <a href="/jobs">queue</a>
+        {' · '}
+        <a href="/me">other user</a>
       </p>
+
+      <h2>refresh</h2>
+      <QueueForm metros={metros} defaultUser={lastfmUser} defaultMetro={metro.slug} />
 
       <HomePanel
         lastfmUser={lastfmUser}
@@ -169,10 +172,7 @@ export default async function MePage({
               );
             })}
           </ul>
-          <p>
-            distances are straight-line, not real road or transit routes. every row shows the
-            distance as well, so the call is yours.
-          </p>
+          <p>straight-line distance, not routed. row shows km, you judge.</p>
         </nav>
       ) : null}
 
@@ -182,25 +182,23 @@ export default async function MePage({
         <>
           <p>
             {metroHasEvents
-              ? `there are concerts in the ${metro.name} calendar, but none match this filter.`
-              : `no upcoming events for ${metro.name} in the database.`}
+              ? `${metro.name} has concerts, none match this filter.`
+              : `no events stored for ${metro.name}.`}
           </p>
           <ul>
             {hasHome && reach !== 'all' ? (
               <li>
-                widen the filter:{' '}
+                widen:{' '}
                 <a href={`/me?u=${encodeURIComponent(lastfmUser)}&metro=${metro.slug}&reach=all`}>
                   anywhere
                 </a>
-                .
               </li>
             ) : null}
             <li>
-              refresh taste and event data: <code>pnpm faz0 --user={lastfmUser} --metro=
-              {metro.slug}</code>
+              <a href="/jobs">queue a refresh</a> to pull fresh data
             </li>
             <li>
-              see the whole area calendar: <a href={`/metro/${metro.slug}`}>{metro.name}</a>
+              whole area: <a href={`/metro/${metro.slug}`}>{metro.name}</a>
             </li>
           </ul>
         </>
@@ -208,8 +206,7 @@ export default async function MePage({
         <div className="scroll-x">
           <table>
             <caption>
-              ordered by taste score; on a tie the closer one comes first. when more than one of
-              your artists plays the same show, the highest scoring one is shown.
+              taste score order, closer wins ties. one row per show, highest artist shown.
             </caption>
             <thead>
               <tr>
@@ -278,10 +275,7 @@ export default async function MePage({
         </div>
       )}
 
-      <p>
-        ticket links go straight to wherever the ticket is sold — mostly ticketmaster, sometimes
-        ticketweb.
-      </p>
+      <p>ticket links go to the seller: mostly ticketmaster, sometimes ticketweb.</p>
     </>
   );
 }

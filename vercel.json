@@ -1,6 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
+    { "path": "/api/jobs/run", "schedule": "*/5 * * * *" },
     { "path": "/api/cron/ingest-events", "schedule": "0 */6 * * *" },
     { "path": "/api/cron/refresh-taste", "schedule": "0 4 * * *" }
   ]

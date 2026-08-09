@@ -35,27 +35,26 @@ export default async function MetroPage({ params }: { params: Promise<{ slug: st
         {[metro.state, metro.country].filter(Boolean).join(', ')}
         {' · '}
         {events.length} events{events.length === EVENT_LIMIT ? ` (first ${EVENT_LIMIT})` : ''}
-        {' · '}no personalization
         {' · '}
-        <a href={`/me?metro=${metro.slug}`}>see your own matches</a>
+        <a href={`/me?metro=${metro.slug}`}>your matches</a>
       </p>
 
       {events.length === 0 ? (
         <>
-          <p>no upcoming events for this area in the database.</p>
+          <p>no events stored for this area.</p>
           <ul>
             <li>
-              set up the schema: <code>pnpm db:migrate</code>
+              schema: <code>pnpm db:migrate</code>
             </li>
             <li>
-              pull the data: <code>pnpm faz0 --user=&lt;lastfm&gt; --metro={metro.slug}</code>
+              data: <a href="/jobs">queue a refresh</a>
             </li>
           </ul>
         </>
       ) : (
         <div className="scroll-x">
           <table>
-            <caption>in date order; the soonest date first.</caption>
+            <caption>date order, soonest first.</caption>
             <thead>
               <tr>
                 <th scope="col">date</th>
@@ -99,8 +98,8 @@ export default async function MetroPage({ params }: { params: Promise<{ slug: st
       )}
 
       <p>
-        event data from the <a href="https://www.ticketmaster.com/">ticketmaster</a> discovery
-        api; ticket links go straight to wherever the ticket is sold.
+        event data by <a href="https://www.ticketmaster.com/">ticketmaster</a>. ticket links go to
+        the seller.
       </p>
     </>
   );
