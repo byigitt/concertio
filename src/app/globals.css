@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+/*
+ * Tek tema: koyu, isinmis notr + tek accent (kehribar). Tailwind v4'te tokenlar
+ * @theme icinde tanimlanir ve dogrudan utility uretir (bg-ink, text-accent, ...).
+ * Saf siyah/beyaz yok; tum notrler hafif mavi-gri tonlu.
+ */
+@theme {
+  --color-ink: oklch(0.17 0.009 265);
+  --color-ink-raised: oklch(0.21 0.010 265);
+  --color-line: oklch(0.30 0.011 265);
+  --color-paper: oklch(0.94 0.006 90);
+  --color-muted: oklch(0.70 0.012 265);
+  --color-faint: oklch(0.56 0.012 265);
+  --color-accent: oklch(0.80 0.135 72);
+  --color-accent-dim: oklch(0.62 0.105 72);
+
+  --font-display: "Iowan Old Style", "Palatino Linotype", "Sitka Text", ui-serif, Georgia, serif;
+  --font-body: "Avenir Next", "Segoe UI Variable Text", ui-sans-serif, "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", monospace;
+}
+
+@layer base {
+  html {
+    background-color: var(--color-ink);
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-ink);
+    color: var(--color-paper);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  a {
+    color: inherit;
+    text-decoration-color: var(--color-accent-dim);
+    text-underline-offset: 3px;
+  }
+
+  a:hover {
+    text-decoration-color: var(--color-accent);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+
+  ::selection {
+    background-color: var(--color-accent);
+    color: var(--color-ink);
+  }
+}

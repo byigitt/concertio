@@ -1,0 +1,38 @@
+{
+  "name": "concertio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "tsx --env-file-if-exists=.env.local scripts/migrate.ts",
+    "db:reset": "tsx --env-file-if-exists=.env.local scripts/migrate.ts --reset",
+    "faz0": "tsx --env-file-if-exists=.env.local scripts/faz0.ts",
+    "smoke": "tsx --env-file-if-exists=.env.local scripts/smoke.ts",
+    "test:pipeline": "tsx --env-file-if-exists=.env.local scripts/test-pagination.ts",
+    "check:lastfm": "tsx --env-file-if-exists=.env.local scripts/check-lastfm.ts"
+  },
+  "dependencies": {
+    "next": "16.3.0",
+    "pg": "8.23.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "26.2.0",
+    "@types/pg": "8.15.6",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "tailwindcss": "4.3.3",
+    "tsx": "4.23.11",
+    "typescript": "5.9.3"
+  }
+}

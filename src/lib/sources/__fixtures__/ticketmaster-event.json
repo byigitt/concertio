@@ -1,0 +1,96 @@
+{
+  "_embedded": {
+    "events": [
+      {
+        "name": "Phish",
+        "type": "event",
+        "id": "CONCERTIO-FIXTURE-EVENT-01",
+        "test": false,
+        "url": "https://www.ticketmaster.com/phish-san-francisco-california-08-15-2026/event/1C005E9BD3E75B2F",
+        "locale": "en-us",
+        "dates": {
+          "start": {
+            "localDate": "2026-08-15",
+            "localTime": "19:30:00",
+            "dateTime": "2026-08-16T02:30:00Z",
+            "dateTBD": false,
+            "dateTBA": false,
+            "timeTBA": false,
+            "noSpecificTime": false
+          },
+          "timezone": "America/Los_Angeles",
+          "status": { "code": "onsale" },
+          "spanMultipleDays": false
+        },
+        "classifications": [
+          {
+            "primary": true,
+            "segment": { "id": "KZFzniwnSyZfZ7v7nJ", "name": "Music" },
+            "genre": { "id": "KnvZfZ7vAeA", "name": "Rock" }
+          }
+        ],
+        "priceRanges": [
+          { "type": "standard", "currency": "USD", "min": 55.5, "max": 125.0 }
+        ],
+        "_embedded": {
+          "venues": [
+            {
+              "name": "Chase Center",
+              "type": "venue",
+              "id": "KovZ917Ahkk",
+              "postalCode": "94158",
+              "timezone": "America/Los_Angeles",
+              "city": { "name": "San Francisco" },
+              "state": { "name": "California", "stateCode": "CA" },
+              "country": { "name": "United States Of America", "countryCode": "US" },
+              "location": { "longitude": "-122.38713", "latitude": "37.76803" }
+            }
+          ],
+          "attractions": [
+            {
+              "name": "Phish",
+              "type": "attraction",
+              "id": "K8vZ91713wV",
+              "url": "https://www.ticketmaster.com/phish-tickets/artist/847841",
+              "externalLinks": {
+                "musicbrainz": [
+                  {
+                    "id": "e01646f2-2a04-450d-8bf2-0d993082e058",
+                    "url": "https://musicbrainz.org/artist/e01646f2-2a04-450d-8bf2-0d993082e058"
+                  }
+                ],
+                "homepage": [{ "url": "https://phish.com/" }]
+              }
+            },
+            {
+              "name": "Trey Anastasio Band",
+              "type": "attraction",
+              "id": "K8vZ9171od7"
+            }
+          ]
+        }
+      },
+      {
+        "name": "Local Opener Night",
+        "type": "event",
+        "id": "CONCERTIO-FIXTURE-EVENT-02",
+        "url": "https://www.ticketmaster.com/event/local01",
+        "dates": {
+          "start": { "localDate": "2026-09-01" },
+          "status": { "code": "cancelled" }
+        },
+        "_embedded": {
+          "venues": [
+            {
+              "name": "The Independent",
+              "city": { "name": "San Francisco" },
+              "state": { "stateCode": "CA" },
+              "location": { "longitude": "-122.43794", "latitude": "37.77552" }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "page": { "size": 100, "totalElements": 2, "totalPages": 1, "number": 0 }
+}

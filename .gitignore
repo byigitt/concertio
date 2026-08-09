@@ -1,0 +1,33 @@
+# Araştırma / çalışma notları — repoya girmez
+docs/
+
+# Ortam
+.env
+.env.*
+!.env.example
+
+# Bağımlılıklar ve build
+node_modules/
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+
+# Cache
+.turbo/
+.vercel/
+.eslintcache
+coverage/
+
+# Lokal veri ve log
+*.log
+*.sqlite
+*.sqlite3
+/tmp/
+/data/
+
+# OS / editör
+.DS_Store
+.idea/
+.vscode/
