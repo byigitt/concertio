@@ -150,7 +150,7 @@ export function toRawEvent(event: TmEvent): RawEvent | undefined {
   const startsAt = toStartsAt(event);
   if (!startsAt) {
     // dates.start zorunlu ama icindeki tum alanlar bos olabilir; tarihsiz etkinlik ise yaramaz.
-    console.warn(`ticketmaster: tarihsiz etkinlik atlandi: ${event.id}`);
+    console.warn(`ticketmaster: skipped event without a date: ${event.id}`);
     return undefined;
   }
 
@@ -202,7 +202,7 @@ export function toRawEvent(event: TmEvent): RawEvent | undefined {
 function apiUrl(path: string, params: Record<string, string>): string {
   const key = process.env['TICKETMASTER_API_KEY'];
   if (!key) {
-    throw new Error('ticketmaster: TICKETMASTER_API_KEY yok; isConfigured() kontrol edilmeliydi');
+    throw new Error('ticketmaster: TICKETMASTER_API_KEY is not set; isConfigured() should have been checked');
   }
   const url = new URL(path, ROOT);
   for (const [name, value] of Object.entries(params)) {
@@ -261,7 +261,7 @@ export const ticketmaster: EventSource = {
       // Yedek yol: metro-first, metro_area.source_id bir Ticketmaster DMA id'sidir.
       params['dmaId'] = query.metroSourceId;
     } else {
-      throw new Error('ticketmaster: fetchEvents artistExternalId veya metroSourceId ister');
+      throw new Error('ticketmaster: fetchEvents needs artistExternalId or metroSourceId');
     }
     if (query.startsAfter) params['startDateTime'] = toTmDateTime(query.startsAfter);
     if (query.startsBefore) params['endDateTime'] = toTmDateTime(query.startsBefore);
@@ -296,9 +296,9 @@ export const ticketmaster: EventSource = {
       if (PAGE_SIZE * nextPage >= DEEP_PAGING_CAP) {
         complete = false;
         console.warn(
-          `ticketmaster: deep-paging tavani (${DEEP_PAGING_CAP}) asildi — ` +
-            `${page.page.totalElements} sonucun ilk ${events.length} tanesi alindi. ` +
-            'Tarih penceresini bolun (startsAfter/startsBefore ile daha dar sorgular).',
+          `ticketmaster: hit the deep-paging cap (${DEEP_PAGING_CAP}) — ` +
+            `took the first ${events.length} of ${page.page.totalElements} results. ` +
+            'split the date window (narrower startsAfter/startsBefore queries).',
         );
         break;
       }

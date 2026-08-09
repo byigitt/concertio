@@ -10,7 +10,7 @@ export function pool(): Pool {
   if (!globalForPool.concertioPool) {
     const connectionString = process.env.DATABASE_URL;
     if (!connectionString) {
-      throw new Error('DATABASE_URL yok. .env.example dosyasini .env.local olarak kopyala.');
+      throw new Error('DATABASE_URL is not set. copy .env.example to .env.local.');
     }
     globalForPool.concertioPool = new Pool({
       connectionString,

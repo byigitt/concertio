@@ -106,7 +106,7 @@ const recentTracksSchema = z.object({
 function apiKey(): string {
   const key = process.env.LASTFM_API_KEY;
   if (!key) {
-    throw new Error('LASTFM_API_KEY tanimli degil; lastfm.isConfigured() kontrol edilmeliydi');
+    throw new Error('LASTFM_API_KEY is not set; lastfm.isConfigured() should have been checked');
   }
   return key;
 }

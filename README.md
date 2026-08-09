@@ -37,6 +37,7 @@ pnpm db:migrate
 pnpm smoke          # API key GEREKTİRMEZ — ingest/dedup/eşleme/sorgu zincirini fixture ile doğrular
 pnpm test:pipeline  # API key ve ağ GEREKTİRMEZ — sayfalama tavanı + iptal kapısı testleri
 pnpm test:reach     # API key ve ağ GEREKTİRMEZ — mesafe + yakınlık kademesi testleri
+pnpm test:strings   # API key ve ağ GEREKTİRMEZ — yayılan arayüz string'leri İngilizce mi
 pnpm check:lastfm   # canlı Last.fm kontrolü: sinyal sayısı + MBID doluluk oranı
 pnpm check:geocode  # canlı Nominatim kontrolü: adres -> koordinat
 pnpm faz0           # tek kullanıcı + tek metro, uçtan uca gerçek veri (iki API key gerekir)

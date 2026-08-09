@@ -8,9 +8,9 @@ export function assertCron(request: Request): void {
   if (!secret) {
     const host = new URL(request.url).hostname;
     if (host === 'localhost' || host === '127.0.0.1') return;
-    throw new Error('CRON_SECRET tanimli degil; uzak cagri reddedildi.');
+    throw new Error('CRON_SECRET is not set; remote call refused.');
   }
   if (request.headers.get('authorization') !== `Bearer ${secret}`) {
-    throw new Error('Cron yetkisiz.');
+    throw new Error('cron request is not authorized.');
   }
 }

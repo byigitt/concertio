@@ -13,15 +13,16 @@
     "typecheck": "tsc --noEmit",
     "db:migrate": "tsx --env-file-if-exists=.env.local scripts/migrate.ts",
     "db:migrate:prod": "tsx --env-file=.env.production.local scripts/migrate.ts",
+    "db:reset": "tsx --env-file-if-exists=.env.local scripts/migrate.ts --reset",
     "deploy:gate": "tsx --env-file=.env.production.local scripts/predeploy.ts",
     "deploy:prod": "pnpm deploy:gate && vercel deploy --prod",
-    "db:reset": "tsx --env-file-if-exists=.env.local scripts/migrate.ts --reset",
     "faz0": "tsx --env-file-if-exists=.env.local scripts/faz0.ts",
     "smoke": "tsx --env-file-if-exists=.env.local scripts/smoke.ts",
     "test:pipeline": "tsx --env-file-if-exists=.env.local scripts/test-pagination.ts",
+    "test:reach": "tsx --env-file-if-exists=.env.local scripts/test-reach.ts",
+    "test:strings": "tsx --env-file-if-exists=.env.local scripts/check-strings.ts",
     "check:lastfm": "tsx --env-file-if-exists=.env.local scripts/check-lastfm.ts",
-    "check:geocode": "tsx --env-file-if-exists=.env.local scripts/check-geocode.ts",
-    "test:reach": "tsx --env-file-if-exists=.env.local scripts/test-reach.ts"
+    "check:geocode": "tsx --env-file-if-exists=.env.local scripts/check-geocode.ts"
   },
   "dependencies": {
     "next": "16.3.0",

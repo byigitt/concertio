@@ -99,7 +99,7 @@ async function resolveVenue(
      RETURNING id`,
     [venue.name, venue.lat ?? null, venue.lng ?? null, venue.city ?? null, venue.state ?? null, metroAreaId],
   );
-  if (!inserted[0]) throw new Error(`venue insert basarisiz: ${venue.name}`);
+  if (!inserted[0]) throw new Error(`venue insert failed: ${venue.name}`);
   return inserted[0].id;
 }
 
@@ -118,7 +118,7 @@ async function dedupKey(
     [venueName, headliner, startsAt],
   );
   const parts = row[0];
-  if (!parts) throw new Error('dedup_key hesaplanamadi');
+  if (!parts) throw new Error('could not compute dedup_key');
   return createHash('sha1').update(`${parts.v}|${parts.d}|${parts.h}`).digest('hex');
 }
 
@@ -175,7 +175,7 @@ export async function ingestEvents(
     const headliner =
       raw.artists.find((a) => a.billing === 'headliner') ?? raw.artists[0];
     if (!headliner) {
-      result.skipped.push({ sourceId: raw.sourceId, reason: 'sanatci yok' });
+      result.skipped.push({ sourceId: raw.sourceId, reason: 'no artist on the event' });
       continue;
     }
 
@@ -215,7 +215,8 @@ export async function ingestEvents(
     if (resolutions.length === 0 || !headlinerResolved) {
       result.skipped.push({
         sourceId: raw.sourceId,
-        reason: resolutions.length === 0 ? 'hicbir sanatci cozumlenemedi' : 'headliner cozumlenemedi',
+        reason:
+          resolutions.length === 0 ? 'no artist could be resolved' : 'headliner could not be resolved',
       });
       continue;
     }
@@ -266,7 +267,7 @@ export async function ingestEvents(
             raw.status,
           ],
         );
-        if (!inserted[0]) throw new Error(`event insert basarisiz: ${raw.sourceId}`);
+        if (!inserted[0]) throw new Error(`event insert failed: ${raw.sourceId}`);
         eventId = inserted[0].id;
         result.eventsInserted += 1;
       }
