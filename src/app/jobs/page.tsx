@@ -49,10 +49,7 @@ export default async function JobsPage() {
 
       <h1>queue</h1>
 
-      <p>
-        one worker, one job at a time. musicbrainz allows 1 request/sec, so parallel runs are off.
-        long jobs split across leases and resume.
-      </p>
+      <p>one worker, one job. musicbrainz: 1 req/sec. long job splits, resumes.</p>
 
       <h2>queue a refresh</h2>
       <QueueForm metros={metros} />

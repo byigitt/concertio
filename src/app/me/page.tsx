@@ -64,7 +64,7 @@ export default async function MePage({
     return (
       <>
         <h1>username required</h1>
-        <p>reads a public last.fm profile. username only, no password.</p>
+        <p>public last.fm profile. username, no password.</p>
         <UserForm metroSlug={metros[0]?.slug} />
       </>
     );
@@ -172,7 +172,7 @@ export default async function MePage({
               );
             })}
           </ul>
-          <p>straight-line distance, not routed. row shows km, you judge.</p>
+          <p>straight-line km, not routed.</p>
         </nav>
       ) : null}
 
@@ -195,7 +195,7 @@ export default async function MePage({
               </li>
             ) : null}
             <li>
-              <a href="/jobs">queue a refresh</a> to pull fresh data
+              <a href="/jobs">queue a refresh</a> for fresh data
             </li>
             <li>
               whole area: <a href={`/metro/${metro.slug}`}>{metro.name}</a>
@@ -205,9 +205,7 @@ export default async function MePage({
       ) : (
         <div className="scroll-x">
           <table>
-            <caption>
-              taste score order, closer wins ties. one row per show, highest artist shown.
-            </caption>
+            <caption>taste order, closer wins ties. one row per show.</caption>
             <thead>
               <tr>
                 <th scope="col">date</th>
@@ -275,7 +273,7 @@ export default async function MePage({
         </div>
       )}
 
-      <p>ticket links go to the seller: mostly ticketmaster, sometimes ticketweb.</p>
+      <p>ticket links go to seller. mostly ticketmaster.</p>
     </>
   );
 }

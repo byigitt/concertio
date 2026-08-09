@@ -69,8 +69,8 @@ export function HomePanel({
                 </button>
               </p>
               <p id="address-hint">
-                like <code>mission district, san francisco</code>. add city and country. street
-                number not needed.
+                like <code>mission district, san francisco</code>. city + country help. no street
+                number.
               </p>
             </fieldset>
           </form>
@@ -80,7 +80,7 @@ export function HomePanel({
               <input type="hidden" name="u" value={lastfmUser} />
               <p>
                 <button type="submit" disabled={clearPending}>
-                  {clearPending ? 'deleting…' : 'delete saved location'}
+                  {clearPending ? 'deleting…' : 'delete location'}
                 </button>
               </p>
             </form>
@@ -109,8 +109,7 @@ export function HomePanel({
               </button>
             </p>
             <p id="secret-hint">
-              home address is sensitive, app has no login yet, so key guards it. key sits in{' '}
-              <code>CONCERTIO_EDIT_SECRET</code>.
+              address is sensitive, no login yet. key sits in <code>CONCERTIO_EDIT_SECRET</code>.
             </p>
           </fieldset>
         </form>

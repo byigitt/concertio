@@ -9,32 +9,28 @@ export default async function HomePage() {
 
   return (
     <>
-      <h1>concerts by bands you actually play</h1>
+      <h1>concerts by bands you play</h1>
 
-      <p>
-        read last.fm history. resolve artist via musicbrainz. match against ticketmaster. one list,
-        your artists, your area. add home address, filter by walk / transit / day trip.
-      </p>
+      <p>your last.fm artists, your area, one list.</p>
 
       <h2>start</h2>
       <QueueForm metros={metros} />
       <p>
-        queue runs it, no terminal needed. watch it on <a href="/jobs">queue</a>. already refreshed
-        once? go straight to <a href="/me">your matches</a>.
+        no terminal. watch <a href="/jobs">queue</a>, then <a href="/me">matches</a>.
       </p>
 
       <h2>how</h2>
       <ol>
-        <li>taste: top artists (3 periods) + loved + recent. recent counts more.</li>
-        <li>identity: musicbrainz link. not certain = no match, goes to review.</li>
-        <li>concerts: one ticketmaster query per artist. geography filtered after.</li>
-        <li>list: sorted by taste score. home address adds distance per row.</li>
+        <li>taste: top + loved + recent. recent weighs more.</li>
+        <li>identity: musicbrainz. unsure = review, no match.</li>
+        <li>concerts: ticketmaster per artist. geography after.</li>
+        <li>list: taste order. home address adds distance.</li>
       </ol>
 
       <h2>areas</h2>
       {metros.length === 0 ? (
         <p>
-          none active. run <code>pnpm db:migrate</code>.
+          none. run <code>pnpm db:migrate</code>.
         </p>
       ) : (
         <ul>

@@ -98,8 +98,7 @@ export default async function MetroPage({ params }: { params: Promise<{ slug: st
       )}
 
       <p>
-        event data by <a href="https://www.ticketmaster.com/">ticketmaster</a>. ticket links go to
-        the seller.
+        events by <a href="https://www.ticketmaster.com/">ticketmaster</a>. links go to seller.
       </p>
     </>
   );
