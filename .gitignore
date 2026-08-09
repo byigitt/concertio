@@ -9,6 +9,9 @@ docs/
 # Bağımlılıklar ve build
 node_modules/
 .next/
+# Next uretiyor ve dev/build arasinda kendini yeniden yaziyor
+# (`.next/types` <-> `.next/dev/types`), o yuzden commit'lenmiyor.
+next-env.d.ts
 out/
 dist/
 build/
