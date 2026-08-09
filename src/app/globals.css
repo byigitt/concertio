@@ -14,7 +14,15 @@
  * odak gorunurlugu) ve tablo cizgileri. Baska hicbir sey.
  */
 
-/* Olcu ve yogunluk. Genislik siniri okunabilirlik icin, sus icin degil. */
+/*
+ * Olcu ve yogunluk. Genislik siniri okunabilirlik icin, sus icin degil.
+ *
+ * `text-transform: lowercase` tum arayuzu kucuk harfe cevirir — kaynak metinler
+ * de kucuk yazildi, bu kural veri kaynakli metni (sanatci/mekan adlari, tarih,
+ * hafta gunu) kapsiyor. Sadece SUNUM katmani: DOM'da orijinal buyuk/kucuk harf
+ * duruyor, yani kopyala-yapistir ve ekran okuyucu bozulmuyor. Harf durumu
+ * direktifte esnek birakilmis bir eksen (bkz. "all-caps accents flexible").
+ */
 body {
   margin: 1.5rem auto;
   padding: 0 1rem;
@@ -22,6 +30,7 @@ body {
   font-family: Times, "Times New Roman", serif;
   font-size: 1rem;
   line-height: 1.45;
+  text-transform: lowercase;
 }
 
 /* Sayilar ve makine metni monospace: tarih/mesafe/skor kolonlari hizali okunsun. */
@@ -32,6 +41,18 @@ time,
 .num {
   font-family: ui-monospace, Menlo, Consolas, monospace;
   font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Literal makine metni kucultulmez. `CONCERTIO_EDIT_SECRET` gibi ortam
+ * degiskeni adlari buyuk/kucuk harfe DUYARLI; kucuk gostermek kullaniciyi
+ * calismayacak bir seyi yazmaya iter. Tasarim metni kucuk, literal metin
+ * oldugu gibi.
+ */
+code,
+kbd,
+samp {
+  text-transform: none;
 }
 
 /* Odak her zaman gorunur. UA outline'i kaldirmak yerine guclendiriliyor. */

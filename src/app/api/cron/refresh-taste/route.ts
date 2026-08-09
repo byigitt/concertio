@@ -25,7 +25,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   }
 
   if (!lastfm.isConfigured()) {
-    return NextResponse.json({ error: 'LASTFM_API_KEY yok' }, { status: 503 });
+    return NextResponse.json({ error: 'LASTFM_API_KEY is not set' }, { status: 503 });
   }
 
   const users = await sql<{ id: string; lastfm_user: string }>(

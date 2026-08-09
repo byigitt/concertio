@@ -25,19 +25,19 @@ const TRANSIT_METERS = 15_000;
 const DAYTRIP_METERS = 150_000;
 
 export interface ReachTier {
-  /** Kullaniciya gosterilen etiket. */
+  /** Kullaniciya gosterilen etiket (ingilizce, kucuk harf). */
   label: string;
   /** Kisa aciklama; filtre secenegi altinda gosterilir. */
   hint: string;
 }
 
 export const REACH_TIERS: Record<Reach, ReachTier> = {
-  walk: { label: 'Yürüyerek', hint: `evden ${WALK_METERS / 1000} km içinde` },
-  transit: { label: 'Toplu taşıma', hint: `evden ${TRANSIT_METERS / 1000} km içinde` },
-  city: { label: 'Aynı şehir', hint: 'evinle aynı şehirde' },
-  daytrip: { label: 'Gün dönüşü', hint: `evden ${DAYTRIP_METERS / 1000} km içinde` },
-  country: { label: 'Aynı ülke', hint: 'farklı şehir, aynı ülke' },
-  all: { label: 'Her yer', hint: 'mesafe filtresi yok' },
+  walk: { label: 'walking', hint: `within ${WALK_METERS / 1000} km of home` },
+  transit: { label: 'transit', hint: `within ${TRANSIT_METERS / 1000} km of home` },
+  city: { label: 'same city', hint: 'in the same city as home' },
+  daytrip: { label: 'day trip', hint: `within ${DAYTRIP_METERS / 1000} km of home` },
+  country: { label: 'same country', hint: 'different city, same country' },
+  all: { label: 'anywhere', hint: 'no distance filter' },
 };
 
 export function isReach(value: string | undefined): value is Reach {

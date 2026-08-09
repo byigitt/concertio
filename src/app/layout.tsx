@@ -6,19 +6,22 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'concertio',
   description:
-    'Dinlediğin sanatçıların yakınındaki konserleri tek listede toplar. Faz 0: SF Bay Area.',
+    'finds upcoming concerts by the artists you actually listen to. phase 0: sf bay area.',
 };
 
 /**
  * Belge iskeleti kaynak sirasinda: skip link, header, nav, main, footer.
  * Sarmalayici <div> yok — gereksiz kutu eklemek yapiyi gizler.
+ *
+ * Metinler ingilizce ve kaynakta kucuk harfle yazili; `body`'deki
+ * `text-transform: lowercase` veri kaynakli metni de kucultuyor.
  */
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="tr">
+    <html lang="en">
       <body>
         <a className="skip" href="#main">
-          İçeriğe geç
+          skip to content
         </a>
 
         <header>
@@ -30,19 +33,19 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             </strong>
           </p>
           <p>
-            Kişisel konser takibi · Faz 0 · SF Bay Area ·{' '}
-            <a href="/api/health">durum</a>
+            personal concert tracking · phase 0 · sf bay area ·{' '}
+            <a href="/api/health">status</a>
           </p>
-          <nav aria-label="Site">
+          <nav aria-label="site">
             <ul>
               <li>
-                <a href="/">Başlangıç</a>
+                <a href="/">start</a>
               </li>
               <li>
-                <a href="/me">Eşleşmelerim</a>
+                <a href="/me">my matches</a>
               </li>
               <li>
-                <a href="/metro/sf-bay-area">SF Bay Area takvimi</a>
+                <a href="/metro/sf-bay-area">sf bay area calendar</a>
               </li>
             </ul>
           </nav>
@@ -56,11 +59,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
         <footer>
           <p>
-            Bildirim ya da e-posta yok; sayfayı açıp bakarsın. Etkinlik verisi{' '}
-            <a href="https://www.ticketmaster.com/">Ticketmaster</a>, zevk sinyali{' '}
-            <a href="https://www.last.fm/">Last.fm</a>, sanatçı kimlikleri{' '}
-            <a href="https://musicbrainz.org/">MusicBrainz</a>, adres çözümlemesi{' '}
-            <a href="https://nominatim.openstreetmap.org/">OpenStreetMap Nominatim</a>.
+            no notifications, no email; you open the page and look. event data from{' '}
+            <a href="https://www.ticketmaster.com/">ticketmaster</a>, taste signal from{' '}
+            <a href="https://www.last.fm/">last.fm</a>, artist identity from{' '}
+            <a href="https://musicbrainz.org/">musicbrainz</a>, address lookup by{' '}
+            <a href="https://nominatim.openstreetmap.org/">openstreetmap nominatim</a>.
           </p>
         </footer>
       </body>

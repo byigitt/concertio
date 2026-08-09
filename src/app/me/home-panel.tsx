@@ -39,21 +39,21 @@ export function HomePanel({
 
   return (
     <section>
-      <h2>Ev konumu</h2>
+      <h2>home location</h2>
 
       {hasAccess ? (
         <>
           <p>
-            Kayıtlı: {homeLabel ? <strong>{homeLabel}</strong> : 'yok'}
+            saved: {homeLabel ? <strong>{homeLabel}</strong> : 'none'}
           </p>
 
           <form action={saveAction}>
             <input type="hidden" name="u" value={lastfmUser} />
             <input type="hidden" name="metro" value={metroSlug} />
             <fieldset>
-              <legend>Adresi güncelle</legend>
+              <legend>update address</legend>
               <p>
-                <label htmlFor="address">Adres, semt veya şehir</label>
+                <label htmlFor="address">address, neighbourhood or city</label>
                 <br />
                 <input
                   id="address"
@@ -65,12 +65,13 @@ export function HomePanel({
                   aria-describedby="address-hint"
                 />{' '}
                 <button type="submit" disabled={savePending}>
-                  {savePending ? 'Kaydediliyor…' : 'Kaydet'}
+                  {savePending ? 'saving…' : 'save'}
                 </button>
               </p>
               <p id="address-hint">
-                Örnek: <code>Mission District, San Francisco</code>. Şehir ve ülke eklemek
-                çözümlemeyi belirginleştirir. Sokak numarası vermek zorunda değilsin; semt de yeter.
+                example: <code>Mission District, San Francisco</code>. adding the city and
+                country makes the lookup unambiguous. you do not have to give a street number; a
+                neighbourhood is enough.
               </p>
             </fieldset>
           </form>
@@ -80,7 +81,7 @@ export function HomePanel({
               <input type="hidden" name="u" value={lastfmUser} />
               <p>
                 <button type="submit" disabled={clearPending}>
-                  {clearPending ? 'Siliniyor…' : 'Kayıtlı konumu sil'}
+                  {clearPending ? 'deleting…' : 'delete saved location'}
                 </button>
               </p>
             </form>
@@ -91,9 +92,9 @@ export function HomePanel({
           <input type="hidden" name="u" value={lastfmUser} />
           <input type="hidden" name="intent" value="unlock" />
           <fieldset>
-            <legend>Erişim</legend>
+            <legend>access</legend>
             <p>
-              <label htmlFor="secret">Erişim anahtarı</label>
+              <label htmlFor="secret">access key</label>
               <br />
               <input
                 id="secret"
@@ -105,12 +106,13 @@ export function HomePanel({
                 aria-describedby="secret-hint"
               />{' '}
               <button type="submit" disabled={savePending}>
-                {savePending ? 'Kontrol ediliyor…' : 'Aç'}
+                {savePending ? 'checking…' : 'unlock'}
               </button>
             </p>
             <p id="secret-hint">
-              Ev adresi hassas veri ve uygulamada henüz oturum yok, o yüzden konum özelliği bir
-              anahtarla korunuyor. Anahtar <code>CONCERTIO_EDIT_SECRET</code> ortam değişkeninde.
+              a home address is sensitive data and the app has no login yet, so the location
+              feature is protected by a key. the key lives in the{' '}
+              <code>CONCERTIO_EDIT_SECRET</code> environment variable.
             </p>
           </fieldset>
         </form>
@@ -118,12 +120,12 @@ export function HomePanel({
 
       {state.message ? (
         <p role="status">
-          <strong>{state.ok ? 'Tamam:' : 'Hata:'}</strong> {state.message}
+          <strong>{state.ok ? 'ok:' : 'error:'}</strong> {state.message}
           {state.resolved ? (
             <>
               {' '}
-              Çözümlenen adres: <strong>{state.resolved}</strong>. Yanlışsa daha ayrıntılı yazıp
-              tekrar kaydet.
+              resolved address: <strong>{state.resolved}</strong>. if that is wrong, write it out
+              in more detail and save again.
             </>
           ) : null}
         </p>

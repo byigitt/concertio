@@ -9,20 +9,20 @@ export default async function HomePage() {
 
   return (
     <>
-      <h1>Dinlediklerin şehre geldiğinde haberin olsun</h1>
+      <h1>know when the music you listen to comes to town</h1>
 
       <p>
-        concertio Last.fm dinleme geçmişini okur, sanatçı kimliklerini MusicBrainz ile eşleştirir ve
-        Ticketmaster&apos;daki gelecek konserlerle karşılaştırır. Geriye tek bir liste kalır: senin
-        sanatçıların, senin bölgende, tarih sırasıyla. Ev adresini girersen liste yürüme mesafesi,
-        toplu taşıma ve gün dönüşü olarak filtrelenir.
+        concertio reads your last.fm listening history, resolves artist identity through
+        musicbrainz, and compares it against upcoming shows on ticketmaster. what is left is one
+        list: your artists, in your area, in date order. add your home address and the list can be
+        filtered by walking distance, transit, or day trip.
       </p>
 
-      <h2>Listeni aç</h2>
+      <h2>open your list</h2>
 
       <form action="/me" method="get">
         <p>
-          <label htmlFor="u">Last.fm kullanıcı adı</label>
+          <label htmlFor="u">last.fm username</label>
           <br />
           <input
             id="u"
@@ -35,42 +35,42 @@ export default async function HomePage() {
             defaultValue=""
           />
           {defaultMetro ? <input type="hidden" name="metro" value={defaultMetro.slug} /> : null}{' '}
-          <button type="submit">Eşleşmeleri göster</button>
+          <button type="submit">show matches</button>
         </p>
         <p id="u-hint">
-          Şifre veya izin gerekmez: Last.fm profili herkese açıksa kullanıcı adı yeterli. Profilin
-          yoksa <a href="https://www.last.fm/join">Last.fm&apos;e kaydolabilirsin</a>.
+          no password, no authorization: if the last.fm profile is public, the username is enough.
+          no profile yet? <a href="https://www.last.fm/join">join last.fm</a>.
         </p>
       </form>
 
-      <h2>Nasıl çalışıyor</h2>
+      <h2>how it works</h2>
 
       <ol>
         <li>
-          <strong>Zevk:</strong> Last.fm&apos;den en çok dinlediklerin (üç ayrı dönem), beğendiğin
-          parçalar ve son çalınanlar okunur. Yakın geçmiş daha ağır sayılır.
+          <strong>taste:</strong> your top artists over three separate periods, your loved tracks,
+          and recent scrobbles are read. recent listening counts for more.
         </li>
         <li>
-          <strong>Kimlik:</strong> her sanatçı MusicBrainz&apos;e bağlanır. Bağ kesin değilse
-          eşleştirme <em>yapılmaz</em>, elle inceleme kuyruğuna düşer — yanlış eşleşme, kaçırılan
-          eşleşmeden pahalıdır.
+          <strong>identity:</strong> every artist is linked to musicbrainz. when the link is not
+          certain, no match is made — it goes to a manual review queue instead, because a wrong
+          match costs more than a missed one.
         </li>
         <li>
-          <strong>Konser:</strong> her sanatçı için Ticketmaster&apos;a tek sorgu gider. Coğrafya
-          filtresi sonradan uygulanır, yani aynı sorgu tüm ülkeyi kapsar.
+          <strong>concerts:</strong> one query per artist goes to ticketmaster. the geographic
+          filter is applied afterwards, so the same query covers the whole country.
         </li>
         <li>
-          <strong>Liste:</strong> kesişim zevk skoruna göre sıralanır; ev adresi varsa her satır
-          mesafesiyle etiketlenir.
+          <strong>list:</strong> the intersection is ordered by taste score; with a home address
+          every row is also labelled by distance.
         </li>
       </ol>
 
-      <h2>Aktif bölgeler</h2>
+      <h2>active areas</h2>
 
       {metros.length === 0 ? (
         <p>
-          Veritabanında aktif bölge yok. Şemayı kur ve ilk veriyi çek:{' '}
-          <code>pnpm db:migrate</code>, ardından <code>pnpm faz0</code>.
+          no active area in the database. set up the schema and pull the first data:{' '}
+          <code>pnpm db:migrate</code>, then <code>pnpm faz0</code>.
         </p>
       ) : (
         <ul>

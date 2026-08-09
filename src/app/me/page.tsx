@@ -15,13 +15,13 @@ export const dynamic = 'force-dynamic';
 // Faz 0 tek metro (SF Bay) oldugu icin sabit saat dilimi yeterli; metro basina
 // timezone kolonu semada yok, coklu metroya gecerken oraya eklenecek.
 const TZ = 'America/Los_Angeles';
-const dateFmt = new Intl.DateTimeFormat('tr-TR', {
+const dateFmt = new Intl.DateTimeFormat('en-US', {
   timeZone: TZ,
   day: '2-digit',
   month: '2-digit',
   year: 'numeric',
 });
-const timeFmt = new Intl.DateTimeFormat('tr-TR', {
+const timeFmt = new Intl.DateTimeFormat('en-US', {
   timeZone: TZ,
   weekday: 'short',
   hour: '2-digit',
@@ -32,7 +32,7 @@ function UserForm({ metroSlug, defaultUser }: { metroSlug?: string; defaultUser?
   return (
     <form action="/me" method="get">
       <p>
-        <label htmlFor="u">Last.fm kullanıcı adı</label>
+        <label htmlFor="u">last.fm username</label>
         <br />
         <input
           id="u"
@@ -44,7 +44,7 @@ function UserForm({ metroSlug, defaultUser }: { metroSlug?: string; defaultUser?
           defaultValue={defaultUser ?? ''}
         />
         {metroSlug ? <input type="hidden" name="metro" value={metroSlug} /> : null}{' '}
-        <button type="submit">Göster</button>
+        <button type="submit">show</button>
       </p>
     </form>
   );
@@ -62,10 +62,10 @@ export default async function MePage({
   if (!lastfmUser) {
     return (
       <>
-        <h1>Kullanıcı adı gerekli</h1>
+        <h1>username required</h1>
         <p>
-          Bu sayfa bir Last.fm profiline bakarak çalışır. Kullanıcı adını yaz; parola ya da
-          yetkilendirme istemiyoruz.
+          this page works by reading a last.fm profile. type the username; no password and no
+          authorization needed.
         </p>
         <UserForm metroSlug={metros[0]?.slug} />
       </>
@@ -78,16 +78,16 @@ export default async function MePage({
   if (!metro) {
     return (
       <>
-        <h1>Bölge bulunamadı</h1>
+        <h1>area not found</h1>
         <p>
           {requestedSlug ? (
             <>
-              <code>{requestedSlug}</code> diye bir bölge yok.
+              there is no area called <code>{requestedSlug}</code>.
             </>
           ) : (
-            'Veritabanında aktif bölge yok.'
+            'no active area in the database.'
           )}{' '}
-          Aktif bölgeler <a href="/">başlangıç sayfasında</a> listeleniyor.
+          active areas are listed on the <a href="/">start page</a>.
         </p>
       </>
     );
@@ -117,21 +117,21 @@ export default async function MePage({
   return (
     <>
       <h1>
-        <a href={`https://www.last.fm/user/${encodeURIComponent(lastfmUser)}`}>{lastfmUser}</a> için
-        eşleşmeler
+        matches for{' '}
+        <a href={`https://www.last.fm/user/${encodeURIComponent(lastfmUser)}`}>{lastfmUser}</a>
       </h1>
 
       <p>
-        Bölge: <a href={`/metro/${metro.slug}`}>{metro.name}</a>
+        area: <a href={`/metro/${metro.slug}`}>{metro.name}</a>
         {' · '}
-        {matches.length} konser
+        {matches.length} concerts
         {hasHome ? (
           <>
-            {' · '}filtre: {REACH_TIERS[reach].label} ({REACH_TIERS[reach].hint})
+            {' · '}filter: {REACH_TIERS[reach].label} ({REACH_TIERS[reach].hint})
           </>
         ) : null}
         {' · '}
-        <a href="/me">başka kullanıcı</a>
+        <a href="/me">another user</a>
       </p>
 
       <HomePanel
@@ -143,8 +143,8 @@ export default async function MePage({
       />
 
       {hasHome ? (
-        <nav aria-label="Yakınlık filtresi">
-          <h2>Filtre</h2>
+        <nav aria-label="proximity filter">
+          <h2>filter</h2>
           <ul>
             {REACH_ORDER.map((tier) => {
               const params = new URLSearchParams({ u: lastfmUser, metro: metro.slug, reach: tier });
@@ -170,37 +170,37 @@ export default async function MePage({
             })}
           </ul>
           <p>
-            Mesafeler kuş uçuşu hesaplanır; gerçek yol ya da toplu taşıma rotası değildir. Her
-            satırda mesafeyi de gösteriyoruz ki kararı sen verebilsin.
+            distances are straight-line, not real road or transit routes. every row shows the
+            distance as well, so the call is yours.
           </p>
         </nav>
       ) : null}
 
-      <h2>Konserler</h2>
+      <h2>concerts</h2>
 
       {matches.length === 0 ? (
         <>
           <p>
             {metroHasEvents
-              ? `${metro.name} takviminde konser var ama hiçbiri bu filtreyle eşleşmiyor.`
-              : `Veritabanında ${metro.name} için gelecek etkinlik yok.`}
+              ? `there are concerts in the ${metro.name} calendar, but none match this filter.`
+              : `no upcoming events for ${metro.name} in the database.`}
           </p>
           <ul>
             {hasHome && reach !== 'all' ? (
               <li>
-                Filtreyi genişlet:{' '}
+                widen the filter:{' '}
                 <a href={`/me?u=${encodeURIComponent(lastfmUser)}&metro=${metro.slug}&reach=all`}>
-                  her yer
+                  anywhere
                 </a>
                 .
               </li>
             ) : null}
             <li>
-              Zevk ve etkinlik verisini tazele: <code>pnpm faz0 --user={lastfmUser} --metro=
+              refresh taste and event data: <code>pnpm faz0 --user={lastfmUser} --metro=
               {metro.slug}</code>
             </li>
             <li>
-              Bölgenin tüm takvimine bak: <a href={`/metro/${metro.slug}`}>{metro.name}</a>
+              see the whole area calendar: <a href={`/metro/${metro.slug}`}>{metro.name}</a>
             </li>
           </ul>
         </>
@@ -208,17 +208,17 @@ export default async function MePage({
         <div className="scroll-x">
           <table>
             <caption>
-              Zevk skoruna göre sıralı; eşit skorda yakın olan üstte. Bir konserde birden fazla
-              sanatçın çalıyorsa en yüksek skorlu gösterilir.
+              ordered by taste score; on a tie the closer one comes first. when more than one of
+              your artists plays the same show, the highest scoring one is shown.
             </caption>
             <thead>
               <tr>
-                <th scope="col">Tarih</th>
-                <th scope="col">Sanatçı</th>
-                <th scope="col">Mekân</th>
-                {hasHome ? <th scope="col">Uzaklık</th> : null}
-                <th scope="col">Skor</th>
-                <th scope="col">Bilet</th>
+                <th scope="col">date</th>
+                <th scope="col">artist</th>
+                <th scope="col">venue</th>
+                {hasHome ? <th scope="col">distance</th> : null}
+                <th scope="col">score</th>
+                <th scope="col">ticket</th>
               </tr>
             </thead>
             <tbody>
@@ -235,7 +235,7 @@ export default async function MePage({
                     </td>
                     <td>
                       {match.artistName}
-                      {match.billing === 'support' ? ' (açılış)' : ''}
+                      {match.billing === 'support' ? ' (support)' : ''}
                       {match.title && match.title !== match.artistName ? (
                         <>
                           <br />
@@ -258,13 +258,13 @@ export default async function MePage({
                         ) : null}
                       </td>
                     ) : null}
-                    <td className="num" title={`Kaynak: ${match.sources.join(', ')}`}>
+                    <td className="num" title={`signals: ${match.sources.join(', ')}`}>
                       {Math.round(match.score)}
                     </td>
                     <td>
                       {ticket ? (
                         <a href={ticket.url} rel="noreferrer">
-                          Bilet
+                          ticket
                         </a>
                       ) : (
                         '—'
@@ -279,8 +279,8 @@ export default async function MePage({
       )}
 
       <p>
-        Bilet bağlantıları doğrudan biletin satıldığı siteye (çoğunlukla Ticketmaster, bazı
-        etkinliklerde TicketWeb) gider.
+        ticket links go straight to wherever the ticket is sold — mostly ticketmaster, sometimes
+        ticketweb.
       </p>
     </>
   );

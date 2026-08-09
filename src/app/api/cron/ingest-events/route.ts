@@ -27,7 +27,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   }
 
   if (!ticketmaster.isConfigured()) {
-    return NextResponse.json({ error: 'TICKETMASTER_API_KEY yok' }, { status: 503 });
+    return NextResponse.json({ error: 'TICKETMASTER_API_KEY is not set' }, { status: 503 });
   }
 
   const metros = await sql<MetroRef>(

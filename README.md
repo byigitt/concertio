@@ -140,7 +140,14 @@ Tarayıcı varsayılanları tasarımın kendisidir. Bunun sonucu olarak:
 - **Erişilebilirlik korundu.** Sayfa başına tek `h1`, ilk `Tab` skip link'e düşüyor ve görünür
   oluyor, odak `2px solid` outline (UA outline kaldırılmadı, güçlendirildi), 16px taban metin,
   linkler altı çizili kalıyor.
-- **UX eklemeleri.** Filtre etiketleri artık sayı gösteriyor ("Yürüyerek (2)") — tek SQL sorgusuyla,
+- **Dil ve harf durumu.** Tüm arayüz metni İngilizce ve tamamen küçük harf. Kaynak string'ler
+  küçük yazıldı; veri kaynaklı metin (sanatçı/mekân adları, tarih, hafta günü) `body`'deki
+  `text-transform: lowercase` ile küçültülüyor. Bu yalnız **sunum** katmanı: DOM'da orijinal
+  harf durumu duruyor, yani kopyala-yapıştır ve ekran okuyucu bozulmuyor (`textContent`
+  `Ken Carson` iken render `ken carson`). Tek istisna `code`/`kbd`/`samp`:
+  `CONCERTIO_EDIT_SECRET` gibi adlar büyük/küçük harfe **duyarlı**, küçük göstermek kullanıcıyı
+  çalışmayacak bir şey yazmaya iterdi. `lang="en"`, tarihler `en-US`.
+- **UX eklemeleri.** Filtre etiketleri sayı gösteriyor ("walking (2)") — tek SQL sorgusuyla,
   boş bir filtreye tıklamadan önce görünüyor. Boş durumlar ne yapılacağını söylüyor ve filtreyi
   genişletme bağlantısı veriyor. `role="status"` mesajları çözümlenen adresi geri gösteriyor.
   Mobilde sayfa yatay taşmıyor, tablo kendi içinde kayıyor.

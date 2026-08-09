@@ -64,13 +64,13 @@ export async function GET(): Promise<NextResponse> {
         missingTables,
         missingFunctions,
         locationSchemaReady: locationReady,
-        hint: ready ? undefined : 'pnpm db:migrate:prod calistir, sonra tekrar dene.',
+        hint: ready ? undefined : 'run pnpm deploy:gate to apply migrations, then retry.',
       },
       { status: ready ? 200 : 503 },
     );
   } catch (error) {
     return NextResponse.json(
-      { ready: false, error: (error as Error).message, hint: 'DATABASE_URL erisilebilir mi?' },
+      { ready: false, error: (error as Error).message, hint: 'is DATABASE_URL reachable?' },
       { status: 503 },
     );
   }

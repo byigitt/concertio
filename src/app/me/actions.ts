@@ -24,7 +24,7 @@ export interface SaveHomeState {
  */
 export async function saveHome(_prev: SaveHomeState, form: FormData): Promise<SaveHomeState> {
   if (!locationFeatureEnabled()) {
-    return { ok: false, message: 'Konum özelliği kapalı: CONCERTIO_EDIT_SECRET tanımlı değil.' };
+    return { ok: false, message: 'location feature is off: CONCERTIO_EDIT_SECRET is not set.' };
   }
 
   const lastfmUser = String(form.get('u') ?? '').trim();
@@ -38,28 +38,28 @@ export async function saveHome(_prev: SaveHomeState, form: FormData): Promise<Sa
     allowed = true;
   }
   if (!allowed) {
-    return { ok: false, message: 'Erişim anahtarı hatalı.' };
+    return { ok: false, message: 'wrong access key.' };
   }
   // Anahtar dogrulandi ama henuz adres girilmedi: sadece kilidi ac.
   if (unlockOnly) {
     revalidatePath('/me');
-    return { ok: true, message: 'Erişim açıldı. Şimdi adresini girebilirsin.' };
+    return { ok: true, message: 'access unlocked. you can enter your address now.' };
   }
 
-  if (!lastfmUser) return { ok: false, message: 'Last.fm kullanıcı adı gerekli.' };
-  if (address.length < 3) return { ok: false, message: 'Adres en az 3 karakter olmalı.' };
+  if (!lastfmUser) return { ok: false, message: 'last.fm username is required.' };
+  if (address.length < 3) return { ok: false, message: 'address must be at least 3 characters.' };
 
   const user = await sqlOne<{ id: string }>(
     'SELECT id FROM app_user WHERE lower(lastfm_user) = lower($1)',
     [lastfmUser],
   );
   if (!user) {
-    return { ok: false, message: `${lastfmUser} için profil yok; önce pnpm faz0 çalıştır.` };
+    return { ok: false, message: `no profile for ${lastfmUser}; run pnpm faz0 first.` };
   }
 
   const place = await geocode(address);
   if (!place) {
-    return { ok: false, message: 'Adres çözümlenemedi. Şehir ve ülke ekleyerek dene.' };
+    return { ok: false, message: 'could not resolve that address. try adding the city and country.' };
   }
 
   await sql(
@@ -71,13 +71,13 @@ export async function saveHome(_prev: SaveHomeState, form: FormData): Promise<Sa
   );
 
   revalidatePath('/me');
-  return { ok: true, message: 'Ev konumu kaydedildi.', resolved: place.label };
+  return { ok: true, message: 'home location saved.', resolved: place.label };
 }
 
 /** Ev konumunu siler; filtre tekrar kapanir. */
 export async function clearHome(_prev: SaveHomeState, form: FormData): Promise<SaveHomeState> {
   if (!(await hasEditAccess())) {
-    return { ok: false, message: 'Erişim anahtarı gerekli.' };
+    return { ok: false, message: 'access key required.' };
   }
   const lastfmUser = String(form.get('u') ?? '').trim();
   await sql(
@@ -88,5 +88,5 @@ export async function clearHome(_prev: SaveHomeState, form: FormData): Promise<S
     [lastfmUser],
   );
   revalidatePath('/me');
-  return { ok: true, message: 'Ev konumu silindi.' };
+  return { ok: true, message: 'home location deleted.' };
 }
