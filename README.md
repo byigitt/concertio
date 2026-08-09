@@ -114,6 +114,7 @@ edilirdi) ve iptal edilmiş bir etkinlik aynı payload'la geri gelirse durumu `c
 | `/` | tanıtım + aktif bölgeler |
 | `/me?u=<lastfm>&metro=<slug>&reach=<kademe>` | kişisel eşleşme listesi + yakınlık filtresi |
 | `/metro/[slug]` | bölgedeki gelecek konserler |
+| `/api/health` | şema hazırlık kontrolü; deploy sonrası doğrulama noktası |
 | `/api/cron/ingest-events` | `vercel.json`: 6 saatte bir, 30 günlük dilimlerle |
 | `/api/cron/refresh-taste` | `vercel.json`: günde bir |
 
@@ -140,14 +141,36 @@ scripts/                   migrate, faz0, smoke, test-pagination, test-reach, ch
 
 ## Deploy (Vercel)
 
+**Sıra önemli: Vercel build'i migration ÇALIŞTIRMAZ.** Bilerek: build paralel ve tekrarlı
+koşabilir, ayrıca build ortamının DB'ye erişimi garanti değil. Şemayı deploy'dan önce elle uygula,
+yoksa uygulama runtime'da opak 500 verir.
+
 ```bash
 vercel link
-vercel env add DATABASE_URL LASTFM_API_KEY TICKETMASTER_API_KEY MUSICBRAINZ_USER_AGENT CRON_SECRET CONCERTIO_EDIT_SECRET
+
+# 1. Neon'u Vercel Marketplace'ten ekle (DATABASE_URL otomatik gelir), sonra kalan env'leri gir
+vercel env add LASTFM_API_KEY TICKETMASTER_API_KEY MUSICBRAINZ_USER_AGENT CRON_SECRET CONCERTIO_EDIT_SECRET
+
+# 2. Şemayı Neon'a uygula — deploy'dan ÖNCE
+vercel env pull .env.production.local --environment=production
+pnpm db:migrate:prod
+
+# 3. Yayına al
 vercel deploy --prod
+
+# 4. Şemanın hazır olduğunu teyit et
+curl -s https://<proje>.vercel.app/api/health
 ```
 
+`GET /api/health` şema hazırsa `200 {"ready":true}`, değilse `503` döner ve **eksik tabloların
+adını** verir. Migration atlanmış bir deploy'da `/me` opak 500 verirken health endpoint
+`missingTables` listesini gösterir — sorunu teşhis etmenin yolu burası.
+
+Migration'lar sıfırdan idempotent çalışır (boş bir DB'de doğrulandı: 14 tablo, `norm_name` +
+`distance_m`, 8 `home_*` kolonu, seed metro). `pnpm db:reset` yalnızca `localhost` bağlantısında
+çalışır — prod şemasını düşürmesi mümkün değil.
+
 Hobby planı ticari kullanıma kapalı; ürünleşecekse Pro şart (`docs/09-free-tier.md` §D).
-Neon'u Vercel Marketplace üzerinden ekleyince `DATABASE_URL` otomatik gelir.
 
 ## Attribution
 

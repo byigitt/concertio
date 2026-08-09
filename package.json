@@ -12,6 +12,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "db:migrate": "tsx --env-file-if-exists=.env.local scripts/migrate.ts",
+    "db:migrate:prod": "tsx --env-file=.env.production.local scripts/migrate.ts",
     "db:reset": "tsx --env-file-if-exists=.env.local scripts/migrate.ts --reset",
     "faz0": "tsx --env-file-if-exists=.env.local scripts/faz0.ts",
     "smoke": "tsx --env-file-if-exists=.env.local scripts/smoke.ts",

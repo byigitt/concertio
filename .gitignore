@@ -31,3 +31,6 @@ coverage/
 .DS_Store
 .idea/
 .vscode/
+
+# vercel env pull ile olusur; migration prod komutu bunu okur
+.env.production.local
