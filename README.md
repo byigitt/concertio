@@ -8,6 +8,7 @@ mimari ABD geneline açık. Tasarım ve araştırma notları `docs/` altında (g
 - Sanatçı kimliği: **MusicBrainz** MBID + `url-rels` köprüsü — `docs/07` K-3.
 - Tarama yönü: **artist-first**, metro taraması değil — `docs/07` K-4.
 - Bildirim/e-posta yok — `docs/07` K-8.
+- Arayüz: **strict Web Brutalism** — tarayıcı varsayılanları tasarımın kendisi, CSS 690 bayt (aşağıda).
 
 ## Kurulum
 
@@ -118,6 +119,32 @@ edilirdi) ve iptal edilmiş bir etkinlik aynı payload'la geri gelirse durumu `c
 | `/api/cron/ingest-events` | `vercel.json`: 6 saatte bir, 30 günlük dilimlerle |
 | `/api/cron/refresh-taste` | `vercel.json`: günde bir |
 
+## Arayüz: strict Web Brutalism
+
+Tarayıcı varsayılanları tasarımın kendisidir. Bunun sonucu olarak:
+
+- **Reset yok.** Tailwind kaldırıldı; Preflight tam olarak direktifin yasakladığı şeyi yapıyordu —
+  UA varsayılanlarını yumuşatmak. `src/app/globals.css` ~70 satır ve yalnız iki iş yapıyor:
+  okunabilirlik (ölçü, yoğunluk, odak) ve tablo çizgileri. Prod CSS **690 bayt**.
+- **Malzeme tarayıcıdan.** Times/serif gövde, monospace sayı ve makine metni, `rgb(0,0,238)`
+  altı çizili linkler, UA başlık boyutları, UA form kontrolleri. Input/button'ın 2px inset kenarı
+  bilerek bırakıldı: onu 1px'e çekmek kontrolü *stillemek* olurdu.
+- **Yapı açıkta.** `header` → `nav` → `main` → `footer` kaynak sırasında, `hr` ile ayrılmış.
+  Eşleşme ve takvim listeleri gerçekten tablo verisi olduğu için `<table>`: `<caption>`,
+  `<thead>`, `scope="col"`, her tarih `<time datetime>`. Formlar `fieldset`/`legend` +
+  `label[for]` + `aria-describedby`.
+- **Dekorasyon yok.** Gölge, gradient, yuvarlatılmış köşe, 1px'ten kalın kenarlık yok — tarayıcıda
+  hesaplanmış stiller üzerinden denetlendi. Neobrutalism'e kaymamak için doygun renk blokları,
+  kalın "tasarlanmış" kenarlıklar ve ofset gölgeler de yok: hiçbir şey ham *görünsün diye*
+  biçimlendirilmedi.
+- **Erişilebilirlik korundu.** Sayfa başına tek `h1`, ilk `Tab` skip link'e düşüyor ve görünür
+  oluyor, odak `2px solid` outline (UA outline kaldırılmadı, güçlendirildi), 16px taban metin,
+  linkler altı çizili kalıyor.
+- **UX eklemeleri.** Filtre etiketleri artık sayı gösteriyor ("Yürüyerek (2)") — tek SQL sorgusuyla,
+  boş bir filtreye tıklamadan önce görünüyor. Boş durumlar ne yapılacağını söylüyor ve filtreyi
+  genişletme bağlantısı veriyor. `role="status"` mesajları çözümlenen adresi geri gösteriyor.
+  Mobilde sayfa yatay taşmıyor, tablo kendi içinde kayıyor.
+
 ## Yapı
 
 ```
@@ -141,30 +168,32 @@ scripts/                   migrate, faz0, smoke, test-pagination, test-reach, ch
 
 ## Deploy (Vercel)
 
-**Sıra önemli: Vercel build'i migration ÇALIŞTIRMAZ.** Bilerek: build paralel ve tekrarlı
-koşabilir, ayrıca build ortamının DB'ye erişimi garanti değil. Şemayı deploy'dan önce elle uygula,
-yoksa uygulama runtime'da opak 500 verir.
+**Vercel build'i migration ÇALIŞTIRMAZ.** Bilerek: build paralel ve tekrarlı koşabilir, ayrıca
+build ortamının DB'ye erişimi garanti değil. Bu yüzden şema kontrolü deploy komutunun **önüne**
+bir kapı olarak konuldu.
 
 ```bash
 vercel link
 
 # 1. Neon'u Vercel Marketplace'ten ekle (DATABASE_URL otomatik gelir), sonra kalan env'leri gir
 vercel env add LASTFM_API_KEY TICKETMASTER_API_KEY MUSICBRAINZ_USER_AGENT CRON_SECRET CONCERTIO_EDIT_SECRET
-
-# 2. Şemayı Neon'a uygula — deploy'dan ÖNCE
 vercel env pull .env.production.local --environment=production
-pnpm db:migrate:prod
 
-# 3. Yayına al
-vercel deploy --prod
-
-# 4. Şemanın hazır olduğunu teyit et
-curl -s https://<proje>.vercel.app/api/health
+# 2. Kapı + deploy: kapı düşerse deploy HİÇ çalışmaz
+pnpm deploy:prod
 ```
 
-`GET /api/health` şema hazırsa `200 {"ready":true}`, değilse `503` döner ve **eksik tabloların
-adını** verir. Migration atlanmış bir deploy'da `/me` opak 500 verirken health endpoint
-`missingTables` listesini gösterir — sorunu teşhis etmenin yolu burası.
+`pnpm deploy:prod` = `pnpm deploy:gate && vercel deploy --prod`. Kapı (`scripts/predeploy.ts`)
+migration'ları uygular, sonra şemayı doğrular: gerekli 13 tablo, `norm_name` + `distance_m`,
+`app_user`'daki 7 `home_*` kolonu, ve fonksiyonların **doğru sonuç verdiği**
+(`distance_m` bilinen mesafede, `norm_name('The Sigur Rós') = 'sigur ros'`). Eksik varsa
+adıyla listeler ve `exit 1` verir; `&&` zinciri koptuğu için `vercel deploy` çalışmaz.
+Yanlışlıkla prod yerine lokale bağlanmayı önlemek için `localhost` bağlantısı `--allow-local`
+olmadan reddedilir.
+
+`GET /api/health` bunun yerine geçmez, **tamamlayıcısıdır**: kapı deploy'u önler, health endpoint
+zaten yayında olan bir kurulumu teşhis eder (`200 {"ready":true}` ya da `503` + `missingTables`).
+Migration atlanmış bir deploy'da `/me` opak 500 verirken health endpoint eksikleri gösterir.
 
 Migration'lar sıfırdan idempotent çalışır (boş bir DB'de doğrulandı: 14 tablo, `norm_name` +
 `distance_m`, 8 `home_*` kolonu, seed metro). `pnpm db:reset` yalnızca `localhost` bağlantısında

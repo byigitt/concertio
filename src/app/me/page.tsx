@@ -1,29 +1,54 @@
 import { HomePanel } from '@/app/me/home-panel';
 import { hasEditAccess, locationFeatureEnabled } from '@/lib/edit-access';
-import { formatDistance, isReach, REACH_ORDER, REACH_TIERS, type Reach } from '@/lib/reach';
 import {
   homeForUser,
   listMetros,
   matchesForUser,
   metroBySlug,
+  reachCounts,
   upcomingInMetro,
 } from '@/lib/queries';
+import { formatDistance, isReach, REACH_ORDER, REACH_TIERS, type Reach } from '@/lib/reach';
 
 export const dynamic = 'force-dynamic';
 
 // Faz 0 tek metro (SF Bay) oldugu icin sabit saat dilimi yeterli; metro basina
 // timezone kolonu semada yok, coklu metroya gecerken oraya eklenecek.
-const dayFmt = new Intl.DateTimeFormat('tr-TR', {
-  timeZone: 'America/Los_Angeles',
+const TZ = 'America/Los_Angeles';
+const dateFmt = new Intl.DateTimeFormat('tr-TR', {
+  timeZone: TZ,
   day: '2-digit',
-  month: 'short',
+  month: '2-digit',
+  year: 'numeric',
 });
 const timeFmt = new Intl.DateTimeFormat('tr-TR', {
-  timeZone: 'America/Los_Angeles',
+  timeZone: TZ,
   weekday: 'short',
   hour: '2-digit',
   minute: '2-digit',
 });
+
+function UserForm({ metroSlug, defaultUser }: { metroSlug?: string; defaultUser?: string }) {
+  return (
+    <form action="/me" method="get">
+      <p>
+        <label htmlFor="u">Last.fm kullanıcı adı</label>
+        <br />
+        <input
+          id="u"
+          name="u"
+          required
+          size={24}
+          autoComplete="username"
+          spellCheck={false}
+          defaultValue={defaultUser ?? ''}
+        />
+        {metroSlug ? <input type="hidden" name="metro" value={metroSlug} /> : null}{' '}
+        <button type="submit">Göster</button>
+      </p>
+    </form>
+  );
+}
 
 export default async function MePage({
   searchParams,
@@ -35,43 +60,15 @@ export default async function MePage({
   const metros = await listMetros();
 
   if (!lastfmUser) {
-    const defaultMetro = metros[0];
     return (
-      <div className="max-w-xl space-y-6">
-        <h1 className="font-display text-3xl tracking-tight">Kullanici adi lazim</h1>
-        <p className="text-sm leading-relaxed text-muted">
-          Bu sayfa bir Last.fm profiline bakarak calisiyor. Kullanici adini yaz; parola ya da
+      <>
+        <h1>Kullanıcı adı gerekli</h1>
+        <p>
+          Bu sayfa bir Last.fm profiline bakarak çalışır. Kullanıcı adını yaz; parola ya da
           yetkilendirme istemiyoruz.
         </p>
-        <form action="/me" method="get" className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <label className="flex flex-1 flex-col gap-2">
-            <span className="text-sm text-muted">Last.fm kullanici adi</span>
-            <input
-              type="text"
-              name="u"
-              required
-              autoComplete="off"
-              spellCheck={false}
-              placeholder="yeterli"
-              className="w-full border-b border-line bg-transparent pb-2 font-display text-lg text-paper placeholder:text-faint focus:border-accent focus:outline-none"
-            />
-          </label>
-          {defaultMetro ? <input type="hidden" name="metro" value={defaultMetro.slug} /> : null}
-          <button
-            type="submit"
-            className="border border-line px-5 py-2 text-sm text-paper transition-colors hover:border-accent hover:text-accent"
-          >
-            Devam
-          </button>
-        </form>
-        <p className="text-xs text-faint">
-          Zevk sinyali{' '}
-          <a href="https://www.last.fm/" rel="noreferrer" target="_blank">
-            Last.fm
-          </a>{' '}
-          verisinden turetilir.
-        </p>
-      </div>
+        <UserForm metroSlug={metros[0]?.slug} />
+      </>
     );
   }
 
@@ -80,22 +77,19 @@ export default async function MePage({
 
   if (!metro) {
     return (
-      <div className="max-w-xl space-y-6">
-        <h1 className="font-display text-3xl tracking-tight">Bolge bulunamadi</h1>
-        <p className="text-sm leading-relaxed text-muted">
+      <>
+        <h1>Bölge bulunamadı</h1>
+        <p>
           {requestedSlug ? (
             <>
-              <span className="font-mono text-paper">{requestedSlug}</span> diye bir bolge yok.
+              <code>{requestedSlug}</code> diye bir bölge yok.
             </>
           ) : (
-            'Veritabaninda aktif bolge yok.'
+            'Veritabanında aktif bölge yok.'
           )}{' '}
-          Aktif bolgeler ana sayfada listeleniyor.
+          Aktif bölgeler <a href="/">başlangıç sayfasında</a> listeleniyor.
         </p>
-        <a href="/" className="text-sm text-accent">
-          Ana sayfa
-        </a>
-      </div>
+      </>
     );
   }
 
@@ -109,192 +103,185 @@ export default async function MePage({
   // Yakinlik filtresi metro sinirini asabilir: "ayni ulke" secildiyse tek
   // metroya kisitlamak filtreyi anlamsiz kilar.
   const crossMetro = hasHome && (reach === 'country' || reach === 'all');
-  const matches = await matchesForUser({
-    lastfmUser,
-    metroSlug: crossMetro ? undefined : metro.slug,
-    reach,
-    home,
-  });
+  const [matches, counts] = await Promise.all([
+    matchesForUser({
+      lastfmUser,
+      metroSlug: crossMetro ? undefined : metro.slug,
+      reach,
+      home,
+    }),
+    reachCounts(lastfmUser, home),
+  ]);
   const metroHasEvents = matches.length > 0 || (await upcomingInMetro(metro.slug, 1)).length > 0;
 
   return (
-    <div className="space-y-10">
-      <header className="space-y-3">
-        <p className="text-xs uppercase tracking-[0.18em] text-faint">{metro.name}</p>
-        <h1 className="font-display text-3xl tracking-tight sm:text-4xl">
-          <a
-            href={`https://www.last.fm/user/${encodeURIComponent(lastfmUser)}`}
-            target="_blank"
-            rel="noreferrer"
-            className="text-accent"
-          >
-            {lastfmUser}
-          </a>{' '}
-          icin eslesmeler
-        </h1>
-        {matches.length > 0 ? (
-          <p className="text-sm text-muted">
-            <span className="tabular-nums">{matches.length}</span> konser · zevk skoruna gore
-            sirali
-          </p>
+    <>
+      <h1>
+        <a href={`https://www.last.fm/user/${encodeURIComponent(lastfmUser)}`}>{lastfmUser}</a> için
+        eşleşmeler
+      </h1>
+
+      <p>
+        Bölge: <a href={`/metro/${metro.slug}`}>{metro.name}</a>
+        {' · '}
+        {matches.length} konser
+        {hasHome ? (
+          <>
+            {' · '}filtre: {REACH_TIERS[reach].label} ({REACH_TIERS[reach].hint})
+          </>
         ) : null}
-      </header>
+        {' · '}
+        <a href="/me">başka kullanıcı</a>
+      </p>
 
       <HomePanel
         lastfmUser={lastfmUser}
+        metroSlug={metro.slug}
         featureEnabled={locationFeatureEnabled()}
         hasAccess={canEditLocation}
         homeLabel={home?.label ?? null}
       />
 
       {hasHome ? (
-        <nav aria-label="Yakinlik filtresi" className="flex flex-wrap gap-x-5 gap-y-2">
-          {REACH_ORDER.map((tier) => {
-            const params = new URLSearchParams({ u: lastfmUser, metro: metro.slug, reach: tier });
-            const active = tier === reach;
-            return (
-              <a
-                key={tier}
-                href={`/me?${params.toString()}`}
-                aria-current={active ? 'page' : undefined}
-                title={REACH_TIERS[tier].hint}
-                className={
-                  active
-                    ? 'border-b border-accent pb-1 text-sm text-accent'
-                    : 'border-b border-transparent pb-1 text-sm text-muted transition-colors hover:text-paper'
-                }
-              >
-                {REACH_TIERS[tier].label}
-              </a>
-            );
-          })}
+        <nav aria-label="Yakınlık filtresi">
+          <h2>Filtre</h2>
+          <ul>
+            {REACH_ORDER.map((tier) => {
+              const params = new URLSearchParams({ u: lastfmUser, metro: metro.slug, reach: tier });
+              const active = tier === reach;
+              const count = counts?.[tier];
+              return (
+                <li key={tier}>
+                  {active ? (
+                    <span aria-current="true">
+                      {REACH_TIERS[tier].label}
+                      {count === undefined ? '' : ` (${count})`}
+                    </span>
+                  ) : (
+                    <a href={`/me?${params.toString()}`}>
+                      {REACH_TIERS[tier].label}
+                      {count === undefined ? '' : ` (${count})`}
+                    </a>
+                  )}
+                  {' — '}
+                  {REACH_TIERS[tier].hint}
+                </li>
+              );
+            })}
+          </ul>
+          <p>
+            Mesafeler kuş uçuşu hesaplanır; gerçek yol ya da toplu taşıma rotası değildir. Her
+            satırda mesafeyi de gösteriyoruz ki kararı sen verebilsin.
+          </p>
         </nav>
       ) : null}
 
+      <h2>Konserler</h2>
+
       {matches.length === 0 ? (
-        <section className="max-w-xl space-y-4 border-l-2 border-accent-dim pl-5">
-          <h2 className="font-display text-xl">
-            {metroHasEvents ? 'Bu bolgede eslesme cikmadi' : 'Veri henuz cekilmedi'}
-          </h2>
-          {metroHasEvents ? (
-            <p className="text-sm leading-relaxed text-muted">
-              {metro.name} takviminde konser var ama hicbiri{' '}
-              <span className="text-paper">{lastfmUser}</span> profilinin sanatcilariyla
-              ortusmuyor. Ya profil zevki henuz cekilmedi ya da bu donem gercekten bos. Zevk
-              verisini tazelemek icin{' '}
-              <span className="font-mono text-paper">
-                pnpm faz0 --user={lastfmUser} --metro={metro.slug}
-              </span>{' '}
-              calistir; ayrica{' '}
-              <a href={`/metro/${metro.slug}`} className="text-accent">
-                bolgedeki tum konserlere
-              </a>{' '}
-              bakabilirsin.
-            </p>
-          ) : (
-            <p className="text-sm leading-relaxed text-muted">
-              Veritabaninda {metro.name} icin gelecek etkinlik yok. Faz 0 boru hattini calistir:{' '}
-              <span className="font-mono text-paper">pnpm db:migrate</span> ile semayi kur,{' '}
-              <span className="font-mono text-paper">
-                pnpm faz0 --user={lastfmUser} --metro={metro.slug}
-              </span>{' '}
-              ile
-              Last.fm zevkini ve Ticketmaster etkinliklerini cek. Ardindan bu sayfayi yenile.
-            </p>
-          )}
-        </section>
-      ) : (
-        <ul className="border-t border-line">
-          {matches.map((match) => {
-            const ticket =
-              match.ticketUrls.find((t) => t.source === 'ticketmaster') ?? match.ticketUrls[0];
-            return (
-              <li
-                key={match.eventId}
-                className="grid grid-cols-1 gap-2 border-b border-line py-5 sm:grid-cols-[6.5rem_1fr_auto] sm:gap-6"
-              >
-                <div className="font-mono text-xs tabular-nums text-muted sm:pt-1">
-                  <span className="text-paper">{dayFmt.format(match.startsAt)}</span>
-                  <span className="ml-2 sm:ml-0 sm:block">{timeFmt.format(match.startsAt)}</span>
-                </div>
-
-                <div className="min-w-0 space-y-1">
-                  <p className="font-display text-lg leading-snug">
-                    {match.artistName}
-                    {match.billing === 'support' ? (
-                      <span className="ml-2 align-middle text-[0.65rem] uppercase tracking-[0.14em] text-faint">
-                        acilis
-                      </span>
-                    ) : null}
-                  </p>
-                  <p className="text-sm text-muted">
-                    {match.venueName}
-                    {match.venueCity ? ` · ${match.venueCity}` : ''}
-                  </p>
-                  {match.reach ? (
-                    <p className="text-xs text-faint">
-                      <span className="uppercase tracking-[0.14em]">
-                        {REACH_TIERS[match.reach].label}
-                      </span>
-                      {formatDistance(match.distanceMeters) ? (
-                        <span className="ml-2 font-mono tabular-nums">
-                          {formatDistance(match.distanceMeters)}
-                        </span>
-                      ) : null}
-                    </p>
-                  ) : null}
-                  {match.title && match.title !== match.artistName ? (
-                    <p className="text-xs text-faint">{match.title}</p>
-                  ) : null}
-                </div>
-
-                <div className="flex items-center gap-4 sm:flex-col sm:items-end sm:gap-2">
-                  <span
-                    className="font-mono text-sm tabular-nums text-accent"
-                    title={`Zevk skoru · kaynak: ${match.sources.join(', ')}`}
-                  >
-                    <span className="sr-only">Zevk skoru </span>
-                    {Math.round(match.score)}
-                  </span>
-                  {ticket ? (
-                    <a
-                      href={ticket.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={`${match.artistName} icin bilet (yeni sekme)`}
-                      className="text-sm text-muted transition-colors hover:text-accent"
-                    >
-                      Bilet
-                    </a>
-                  ) : (
-                    <span className="text-sm text-faint">Bilet yok</span>
-                  )}
-                </div>
+        <>
+          <p>
+            {metroHasEvents
+              ? `${metro.name} takviminde konser var ama hiçbiri bu filtreyle eşleşmiyor.`
+              : `Veritabanında ${metro.name} için gelecek etkinlik yok.`}
+          </p>
+          <ul>
+            {hasHome && reach !== 'all' ? (
+              <li>
+                Filtreyi genişlet:{' '}
+                <a href={`/me?u=${encodeURIComponent(lastfmUser)}&metro=${metro.slug}&reach=all`}>
+                  her yer
+                </a>
+                .
               </li>
-            );
-          })}
-        </ul>
+            ) : null}
+            <li>
+              Zevk ve etkinlik verisini tazele: <code>pnpm faz0 --user={lastfmUser} --metro=
+              {metro.slug}</code>
+            </li>
+            <li>
+              Bölgenin tüm takvimine bak: <a href={`/metro/${metro.slug}`}>{metro.name}</a>
+            </li>
+          </ul>
+        </>
+      ) : (
+        <div className="scroll-x">
+          <table>
+            <caption>
+              Zevk skoruna göre sıralı; eşit skorda yakın olan üstte. Bir konserde birden fazla
+              sanatçın çalıyorsa en yüksek skorlu gösterilir.
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Tarih</th>
+                <th scope="col">Sanatçı</th>
+                <th scope="col">Mekân</th>
+                {hasHome ? <th scope="col">Uzaklık</th> : null}
+                <th scope="col">Skor</th>
+                <th scope="col">Bilet</th>
+              </tr>
+            </thead>
+            <tbody>
+              {matches.map((match) => {
+                const ticket =
+                  match.ticketUrls.find((t) => t.source === 'ticketmaster') ?? match.ticketUrls[0];
+                const iso = match.startsAt.toISOString();
+                return (
+                  <tr key={match.eventId}>
+                    <td>
+                      <time dateTime={iso}>
+                        {dateFmt.format(match.startsAt)} {timeFmt.format(match.startsAt)}
+                      </time>
+                    </td>
+                    <td>
+                      {match.artistName}
+                      {match.billing === 'support' ? ' (açılış)' : ''}
+                      {match.title && match.title !== match.artistName ? (
+                        <>
+                          <br />
+                          {match.title}
+                        </>
+                      ) : null}
+                    </td>
+                    <td>
+                      {match.venueName}
+                      {match.venueCity ? `, ${match.venueCity}` : ''}
+                    </td>
+                    {hasHome ? (
+                      <td>
+                        {match.reach ? REACH_TIERS[match.reach].label : '—'}
+                        {formatDistance(match.distanceMeters) ? (
+                          <>
+                            <br />
+                            <span className="num">{formatDistance(match.distanceMeters)}</span>
+                          </>
+                        ) : null}
+                      </td>
+                    ) : null}
+                    <td className="num" title={`Kaynak: ${match.sources.join(', ')}`}>
+                      {Math.round(match.score)}
+                    </td>
+                    <td>
+                      {ticket ? (
+                        <a href={ticket.url} rel="noreferrer">
+                          Bilet
+                        </a>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
 
-      <p className="text-xs leading-relaxed text-faint">
-        Event data by{' '}
-        <a href="https://www.ticketmaster.com/" target="_blank" rel="noreferrer">
-          Ticketmaster
-        </a>
-        ; bilet linkleri dogrudan Ticketmaster&apos;a gider. Zevk sinyali{' '}
-        <a
-          href={`https://www.last.fm/user/${encodeURIComponent(lastfmUser)}`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Last.fm
-        </a>{' '}
-        dinleme gecmisinden, sanatci kimlikleri{' '}
-        <a href="https://musicbrainz.org/" target="_blank" rel="noreferrer">
-          MusicBrainz
-        </a>
-        &apos;ten gelir.
+      <p>
+        Bilet bağlantıları doğrudan biletin satıldığı siteye (çoğunlukla Ticketmaster, bazı
+        etkinliklerde TicketWeb) gider.
       </p>
-    </div>
+    </>
   );
 }

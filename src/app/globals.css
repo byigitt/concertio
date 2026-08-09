@@ -1,56 +1,87 @@
-@import "tailwindcss";
-
 /*
- * Tek tema: koyu, isinmis notr + tek accent (kehribar). Tailwind v4'te tokenlar
- * @theme icinde tanimlanir ve dogrudan utility uretir (bg-ink, text-accent, ...).
- * Saf siyah/beyaz yok; tum notrler hafif mavi-gri tonlu.
+ * Strict Web Brutalism.
+ *
+ * Kural: TARAYICI VARSAYILANLARI TASARIMIN KENDISI. Burada reset YOK — normalize
+ * yok, box-sizing sifirlamasi yok, baslik boyutlarina, liste isaretlerine, link
+ * rengine dokunulmuyor. Link mavi ve alti cizili kaliyor cunku bu durust bir
+ * ipucudur, dekorasyon degil.
+ *
+ * Yasak: golge, gradient, yuvarlatilmis kose, 1px'ten kalin kenarlik, dolu renkli
+ * bloklar, ofset golge. Bunlar Neobrutalism kostumu olur; burada hicbir sey "ham
+ * gorunsun diye" bicimlendirilmiyor, gercekten ham.
+ *
+ * Bu dosyanin tamami ~70 satir ve tek is yapiyor: okunabilirlik (olcu, yogunluk,
+ * odak gorunurlugu) ve tablo cizgileri. Baska hicbir sey.
  */
-@theme {
-  --color-ink: oklch(0.17 0.009 265);
-  --color-ink-raised: oklch(0.21 0.010 265);
-  --color-line: oklch(0.30 0.011 265);
-  --color-paper: oklch(0.94 0.006 90);
-  --color-muted: oklch(0.70 0.012 265);
-  --color-faint: oklch(0.56 0.012 265);
-  --color-accent: oklch(0.80 0.135 72);
-  --color-accent-dim: oklch(0.62 0.105 72);
 
-  --font-display: "Iowan Old Style", "Palatino Linotype", "Sitka Text", ui-serif, Georgia, serif;
-  --font-body: "Avenir Next", "Segoe UI Variable Text", ui-sans-serif, "Helvetica Neue", sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", monospace;
+/* Olcu ve yogunluk. Genislik siniri okunabilirlik icin, sus icin degil. */
+body {
+  margin: 1.5rem auto;
+  padding: 0 1rem;
+  max-width: 78ch;
+  font-family: Times, "Times New Roman", serif;
+  font-size: 1rem;
+  line-height: 1.45;
 }
 
-@layer base {
-  html {
-    background-color: var(--color-ink);
-    color-scheme: dark;
-  }
+/* Sayilar ve makine metni monospace: tarih/mesafe/skor kolonlari hizali okunsun. */
+code,
+kbd,
+samp,
+time,
+.num {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
 
-  body {
-    background-color: var(--color-ink);
-    color: var(--color-paper);
-    font-family: var(--font-body);
-    -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
-  }
+/* Odak her zaman gorunur. UA outline'i kaldirmak yerine guclendiriliyor. */
+:focus-visible {
+  outline: 2px solid;
+  outline-offset: 1px;
+}
 
-  a {
-    color: inherit;
-    text-decoration-color: var(--color-accent-dim);
-    text-underline-offset: 3px;
-  }
+/* Klavye kullanicisi icin ilk durak. Gorunmez ama odaklaninca ortaya cikar. */
+.skip {
+  position: absolute;
+  left: -9999px;
+}
+.skip:focus {
+  position: static;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
 
-  a:hover {
-    text-decoration-color: var(--color-accent);
-  }
+/* En fazla 1px duz cizgi. */
+hr {
+  border: 0;
+  border-top: 1px solid;
+  margin: 1.5rem 0;
+}
 
-  :focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 3px;
-  }
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+caption {
+  text-align: left;
+  padding-bottom: 0.25rem;
+}
+th,
+td {
+  border: 1px solid;
+  padding: 0.2rem 0.4rem;
+  text-align: left;
+  vertical-align: top;
+}
 
-  ::selection {
-    background-color: var(--color-accent);
-    color: var(--color-ink);
+/* Aktif filtre kaliniyla isaretlenir; renk tasimaya gerek yok. */
+[aria-current] {
+  font-weight: bold;
+}
+
+/* Kucuk ekranda tablo yatay kaydirilir; hucre kirpilmasin. */
+@media (max-width: 40em) {
+  .scroll-x {
+    overflow-x: auto;
   }
 }

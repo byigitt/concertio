@@ -4,7 +4,13 @@
  */
 
 import { sql, sqlOne } from '@/lib/db/client';
-import { classifyReach, REACH_SELECT_SQL, reachWhereSql, type Reach } from '@/lib/reach';
+import {
+  classifyReach,
+  REACH_ORDER,
+  REACH_SELECT_SQL,
+  reachWhereSql,
+  type Reach,
+} from '@/lib/reach';
 import type { Billing, RawTicketUrl, TasteSignal } from '@/lib/types';
 
 export interface MetroRow {
@@ -182,6 +188,40 @@ export async function matchesForUser(query: MatchQuery): Promise<MatchRow[]> {
     distanceMeters: r.distance_m,
     reach: hasHome ? classifyReach(r.distance_m, r.same_city, r.same_country) : undefined,
   }));
+}
+
+/**
+ * Her yakinlik kademesi icin eslesme sayisi — filtre etiketlerinde gosterilir
+ * ("Yürüyerek (2)"), boylece kullanici bos bir filtreye tiklamadan once goruyor.
+ *
+ * Tek sorgu: `matchesForUser`'i alti kez cagirmak yerine kademe yuklemleri
+ * kosullu sayim olarak yaziliyor. Ev konumu yoksa sayim anlamsizdir, undefined doner.
+ */
+export async function reachCounts(
+  lastfmUser: string,
+  home: HomeLocation | undefined,
+): Promise<Record<Reach, number> | undefined> {
+  if (!home || home.lat === null || home.lng === null) return undefined;
+
+  const conditions = REACH_ORDER.map((tier) => {
+    const predicate = reachWhereSql(tier);
+    return `count(DISTINCT CASE WHEN ${predicate ?? 'true'} THEN e.id END)::int AS ${tier}`;
+  }).join(',\n    ');
+
+  const rows = await sql<Record<Reach, number>>(
+    `SELECT ${conditions}
+       FROM app_user u
+       JOIN user_taste   ut ON ut.user_id = u.id
+       JOIN event_artist ea ON ea.artist_id = ut.artist_id
+       JOIN event        e  ON e.id = ea.event_id
+       JOIN venue        v  ON v.id = e.venue_id
+      WHERE lower(u.lastfm_user) = lower($1)
+        AND e.starts_at > now()
+        AND e.status <> 'cancelled'`,
+    // $6 (metro slug) bu sorguda kullanilmiyor; fazla parametre Postgres'i hata verdirir.
+    [lastfmUser, home.lat, home.lng, home.city, home.country],
+  );
+  return rows[0];
 }
 
 /** Metrodaki gelecek etkinlikler; kisisellestirme yok, headliner adlariyla. */

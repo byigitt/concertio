@@ -13,6 +13,8 @@
     "typecheck": "tsc --noEmit",
     "db:migrate": "tsx --env-file-if-exists=.env.local scripts/migrate.ts",
     "db:migrate:prod": "tsx --env-file=.env.production.local scripts/migrate.ts",
+    "deploy:gate": "tsx --env-file=.env.production.local scripts/predeploy.ts",
+    "deploy:prod": "pnpm deploy:gate && vercel deploy --prod",
     "db:reset": "tsx --env-file-if-exists=.env.local scripts/migrate.ts --reset",
     "faz0": "tsx --env-file-if-exists=.env.local scripts/faz0.ts",
     "smoke": "tsx --env-file-if-exists=.env.local scripts/smoke.ts",
@@ -29,12 +31,10 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "4.3.3",
     "@types/node": "26.2.0",
     "@types/pg": "8.15.6",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
-    "tailwindcss": "4.3.3",
     "tsx": "4.23.11",
     "typescript": "5.9.3"
   }

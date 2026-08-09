@@ -8,19 +8,24 @@ const initialState: SaveHomeState = { ok: false, message: '' };
 /**
  * Ev konumu paneli.
  *
- * Uc durum var:
+ * Uc durum:
  *   - Ozellik kapali (`CONCERTIO_EDIT_SECRET` yok): hicbir sey gosterilmez.
- *   - Erisim yok: sadece anahtar alani. Adres alani bile gosterilmez, cunku
- *     kayitli konum hassas ve dogrulanmamis cagirana sizmamali.
+ *   - Erisim yok: sadece anahtar alani. Kayitli konum hassas oldugu icin
+ *     dogrulanmamis cagirana adres alani bile gosterilmez.
  *   - Erisim var: adres formu + kayitli konum + silme.
+ *
+ * <fieldset>/<legend> kullaniliyor: alanlar arasindaki iliskiyi ekran okuyucuya
+ * yapinin kendisi anlatiyor, ek ARIA gerekmiyor.
  */
 export function HomePanel({
   lastfmUser,
+  metroSlug,
   featureEnabled,
   hasAccess,
   homeLabel,
 }: {
   lastfmUser: string;
+  metroSlug: string;
   featureEnabled: boolean;
   hasAccess: boolean;
   homeLabel: string | null;
@@ -33,79 +38,94 @@ export function HomePanel({
   const state = saveState.message ? saveState : clearState;
 
   return (
-    <section className="max-w-xl space-y-3 border-l-2 border-line pl-5">
-      <h2 className="text-xs uppercase tracking-[0.18em] text-faint">Ev konumu</h2>
-
-      {hasAccess && homeLabel ? (
-        <p className="text-sm leading-relaxed text-muted">
-          <span className="text-paper">{homeLabel}</span>
-        </p>
-      ) : null}
-
-      <form action={saveAction} className="flex flex-wrap items-end gap-3">
-        <input type="hidden" name="u" value={lastfmUser} />
-
-        {hasAccess ? (
-          <label className="flex-1 space-y-1">
-            <span className="block text-xs text-faint">Adres, semt veya şehir</span>
-            <input
-              name="address"
-              required
-              minLength={3}
-              placeholder="Mission District, San Francisco"
-              className="w-full border-b border-line bg-transparent pb-1 text-sm text-paper outline-none focus-visible:border-accent"
-            />
-          </label>
-        ) : (
-          <label className="flex-1 space-y-1">
-            <span className="block text-xs text-faint">Erişim anahtarı</span>
-            <input
-              name="secret"
-              type="password"
-              required
-              autoComplete="off"
-              className="w-full border-b border-line bg-transparent pb-1 text-sm text-paper outline-none focus-visible:border-accent"
-            />
-            <input type="hidden" name="intent" value="unlock" />
-          </label>
-        )}
-
-        <button
-          type="submit"
-          disabled={savePending}
-          className="pb-1 text-sm text-accent transition-opacity disabled:opacity-50"
-        >
-          {savePending ? 'Kaydediliyor' : hasAccess ? 'Kaydet' : 'Aç'}
-        </button>
-      </form>
-
-      {hasAccess && homeLabel ? (
-        <form action={clearAction}>
-          <input type="hidden" name="u" value={lastfmUser} />
-          <button
-            type="submit"
-            disabled={clearPending}
-            className="text-xs text-faint transition-colors hover:text-paper disabled:opacity-50"
-          >
-            Konumu sil
-          </button>
-        </form>
-      ) : null}
-
-      {state.message ? (
-        <p className={`text-xs ${state.ok ? 'text-accent' : 'text-muted'}`} role="status">
-          {state.message}
-        </p>
-      ) : null}
+    <section>
+      <h2>Ev konumu</h2>
 
       {hasAccess ? (
-        <p className="text-xs leading-relaxed text-faint">
-          Mesafeler düz hat üzerinden hesaplanır, gerçek yol veya toplu taşıma rotası değil.
-          Adres çözümlemesi{' '}
-          <a href="https://nominatim.openstreetmap.org/" target="_blank" rel="noreferrer">
-            OpenStreetMap Nominatim
-          </a>{' '}
-          ile yapılır.
+        <>
+          <p>
+            Kayıtlı: {homeLabel ? <strong>{homeLabel}</strong> : 'yok'}
+          </p>
+
+          <form action={saveAction}>
+            <input type="hidden" name="u" value={lastfmUser} />
+            <input type="hidden" name="metro" value={metroSlug} />
+            <fieldset>
+              <legend>Adresi güncelle</legend>
+              <p>
+                <label htmlFor="address">Adres, semt veya şehir</label>
+                <br />
+                <input
+                  id="address"
+                  name="address"
+                  required
+                  minLength={3}
+                  size={36}
+                  autoComplete="street-address"
+                  aria-describedby="address-hint"
+                />{' '}
+                <button type="submit" disabled={savePending}>
+                  {savePending ? 'Kaydediliyor…' : 'Kaydet'}
+                </button>
+              </p>
+              <p id="address-hint">
+                Örnek: <code>Mission District, San Francisco</code>. Şehir ve ülke eklemek
+                çözümlemeyi belirginleştirir. Sokak numarası vermek zorunda değilsin; semt de yeter.
+              </p>
+            </fieldset>
+          </form>
+
+          {homeLabel ? (
+            <form action={clearAction}>
+              <input type="hidden" name="u" value={lastfmUser} />
+              <p>
+                <button type="submit" disabled={clearPending}>
+                  {clearPending ? 'Siliniyor…' : 'Kayıtlı konumu sil'}
+                </button>
+              </p>
+            </form>
+          ) : null}
+        </>
+      ) : (
+        <form action={saveAction}>
+          <input type="hidden" name="u" value={lastfmUser} />
+          <input type="hidden" name="intent" value="unlock" />
+          <fieldset>
+            <legend>Erişim</legend>
+            <p>
+              <label htmlFor="secret">Erişim anahtarı</label>
+              <br />
+              <input
+                id="secret"
+                name="secret"
+                type="password"
+                required
+                size={36}
+                autoComplete="off"
+                aria-describedby="secret-hint"
+              />{' '}
+              <button type="submit" disabled={savePending}>
+                {savePending ? 'Kontrol ediliyor…' : 'Aç'}
+              </button>
+            </p>
+            <p id="secret-hint">
+              Ev adresi hassas veri ve uygulamada henüz oturum yok, o yüzden konum özelliği bir
+              anahtarla korunuyor. Anahtar <code>CONCERTIO_EDIT_SECRET</code> ortam değişkeninde.
+            </p>
+          </fieldset>
+        </form>
+      )}
+
+      {state.message ? (
+        <p role="status">
+          <strong>{state.ok ? 'Tamam:' : 'Hata:'}</strong> {state.message}
+          {state.resolved ? (
+            <>
+              {' '}
+              Çözümlenen adres: <strong>{state.resolved}</strong>. Yanlışsa daha ayrıntılı yazıp
+              tekrar kaydet.
+            </>
+          ) : null}
         </p>
       ) : null}
     </section>
