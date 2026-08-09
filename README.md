@@ -28,13 +28,16 @@ pnpm db:migrate
 | `MUSICBRAINZ_USER_AGENT` | `concertio/0.1 ( mailin@example.com )` — MusicBrainz anlamlı UA şart koşuyor | evet |
 | `CONCERTIO_LASTFM_USER` | kendi Last.fm kullanıcı adın | Faz 0 için |
 | `CRON_SECRET` | Vercel'de cron çağrılarını doğrulamak için | deploy'da |
+| `CONCERTIO_EDIT_SECRET` | `openssl rand -hex 24` — ev konumu özelliğini açar (≥16 karakter) | konum için |
 
 ## Komutlar
 
 ```bash
 pnpm smoke          # API key GEREKTİRMEZ — ingest/dedup/eşleme/sorgu zincirini fixture ile doğrular
 pnpm test:pipeline  # API key ve ağ GEREKTİRMEZ — sayfalama tavanı + iptal kapısı testleri
+pnpm test:reach     # API key ve ağ GEREKTİRMEZ — mesafe + yakınlık kademesi testleri
 pnpm check:lastfm   # canlı Last.fm kontrolü: sinyal sayısı + MBID doluluk oranı
+pnpm check:geocode  # canlı Nominatim kontrolü: adres -> koordinat
 pnpm faz0           # tek kullanıcı + tek metro, uçtan uca gerçek veri (iki API key gerekir)
 pnpm dev            # http://localhost:3000
 pnpm typecheck
@@ -51,6 +54,33 @@ skorlandı → ilk 60'ı MusicBrainz ile çözümlendi (58 bağlandı, 2 geçici
 Ticketmaster attraction id bulundu → **13 eşleşme**. MBID doluluk oranı Last.fm tarafında %72;
 kalan %28 için MusicBrainz araması gerekiyor ve 1 istek/sn limiti koşu süresini belirliyor
 (ilk koşu ~145 sn, sonraki koşular sanatçılar DB'de olduğu için ~60 sn).
+
+### Ev konumu ve yakınlık filtresi
+
+`/me` sayfasında ev adresi girilince her eşleşme eve olan mesafesine göre etiketlenir ve
+filtrelenebilir. Kademeler `src/lib/reach.ts`'te tek yerde tanımlı:
+
+| Kademe | Ölçüt | Not |
+|---|---|---|
+| Yürüyerek | ≤ 2 km | ~25 dk yürüyüş |
+| Toplu taşıma | ≤ 15 km | şehir içi otobüs/metro |
+| Aynı şehir | şehir adı eşleşmesi **veya** ≤ 15 km | idari sınır, mesafeden bağımsız |
+| Gün dönüşü | ≤ 150 km | SF → Sacramento (120 km, tren ~2 sa) dahil olacak şekilde kalibre |
+| Aynı ülke | ülke kodu eşleşmesi | farklı şehir, aynı ülke |
+| Her yer | filtre yok | — |
+
+**Mesafe düz hat (great-circle), yol veya toplu taşıma rotası değil.** Gerçek rota için GTFS/OTP
+gerekir; o yüzden etiketler iddia değil tahmindir ve mesafe her satırda ayrıca gösterilir.
+`Aynı ülke` ve `Her yer` seçildiğinde metro filtresi kaldırılır — aksi halde "farklı şehir"
+filtresi tek metroya sıkışıp anlamsız olurdu. Adres çözümlemesi OSM Nominatim ile yapılır
+(1 istek/sn, `User-Agent` zorunlu); sonuç `app_user`'a yazıldığı için kullanıcı başına tek istek.
+
+**Erişim kontrolü — geçici.** Uygulamada henüz auth yok ve `?u=<lastfm>` kimlik doğrulamaz.
+Ev adresi hassas veri olduğu için konum özelliği hem okuma hem yazma için
+`CONCERTIO_EDIT_SECRET` bilmeyi gerektirir; secret tanımsızsa özellik tamamen kapalıdır
+(fail closed). Doğrulanan secret'in sha256'sı httpOnly cookie'de tutulur. Kullanıcı adını
+beyaz listeye almak yeterli olmazdı: kullanıcı adı herkese açık, secret değil. Faz 1'de Auth.js
+gelince `src/lib/edit-access.ts` silinip sahiplik oturumdan okunacak.
 
 ### Eksik küme ve pencere kuralı (destructive işlemler için)
 
@@ -75,14 +105,14 @@ ilerletmez. Ayrıca `unchanged` dalı `fetched_at`'i tazeler (yoksa hiç değiş
 edilirdi) ve iptal edilmiş bir etkinlik aynı payload'la geri gelirse durumu `confirmed`'a geri
 çeker (`statusRestored`) — yoksa sonsuza kadar `cancelled` kalırdı.
 
-Üç korumanın hepsi `pnpm test:pipeline` altında: 30 kontrol, ağ ve API key gerektirmiyor.
+Üç korumanın hepsi `pnpm test:pipeline` altında: 33 kontrol, ağ ve API key gerektirmiyor.
 
 ## Rotalar
 
 | Rota | İşi |
 |---|---|
 | `/` | tanıtım + aktif bölgeler |
-| `/me?u=<lastfm>&metro=<slug>` | kişisel eşleşme listesi |
+| `/me?u=<lastfm>&metro=<slug>&reach=<kademe>` | kişisel eşleşme listesi + yakınlık filtresi |
 | `/metro/[slug]` | bölgedeki gelecek konserler |
 | `/api/cron/ingest-events` | `vercel.json`: 6 saatte bir, 30 günlük dilimlerle |
 | `/api/cron/refresh-taste` | `vercel.json`: günde bir |
@@ -90,7 +120,8 @@ edilirdi) ve iptal edilmiş bir etkinlik aynı payload'la geri gelirse durumu `c
 ## Yapı
 
 ```
-migrations/0001_init.sql   docs/05 §1 DDL'inin birebir kopyası — ikisini birlikte güncelle
+migrations/0001_init.sql    docs/05 §1 DDL'inin birebir kopyası — ikisini birlikte güncelle
+migrations/0002_home_location.sql  ev konumu kolonları + distance_m() + venue.country
 src/lib/types.ts           paylaşılan sözleşme (EventSource, TasteSource, RawEvent, ...)
 src/lib/db/client.ts       pool/sql/sqlOne/tx — DB erişimi yalnızca buradan
 src/lib/http.ts            fetchJson: source_config'ten rate limit, throttle, cooldown
@@ -100,14 +131,18 @@ src/lib/matching.ts        5 kademeli sanatçı kimlik çözümlemesi + review k
 src/lib/scoring.ts         taste skorlama (log ölçek, recency decay, popülerlik cezası)
 src/lib/ingest.ts          venue çözümleme, dedup_key, idempotent upsert
 src/lib/pipeline.ts        refreshMetro: 30 günlük dilimler + eksik kümede iptal kapısı
-scripts/                   migrate, faz0, smoke, test-pagination
+src/lib/reach.ts           yakınlık kademeleri: eşikler, SQL parçaları, sınıflandırma
+src/lib/geocode.ts         OSM Nominatim: adres -> koordinat
+src/lib/edit-access.ts     GEÇİCİ: konum özelliği için secret + httpOnly cookie
+src/lib/queries.ts         sayfaların okuma sorguları (reach filtresi dahil)
+scripts/                   migrate, faz0, smoke, test-pagination, test-reach, check-*
 ```
 
 ## Deploy (Vercel)
 
 ```bash
 vercel link
-vercel env add DATABASE_URL LASTFM_API_KEY TICKETMASTER_API_KEY MUSICBRAINZ_USER_AGENT CRON_SECRET
+vercel env add DATABASE_URL LASTFM_API_KEY TICKETMASTER_API_KEY MUSICBRAINZ_USER_AGENT CRON_SECRET CONCERTIO_EDIT_SECRET
 vercel deploy --prod
 ```
 

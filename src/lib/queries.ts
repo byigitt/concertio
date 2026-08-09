@@ -4,6 +4,7 @@
  */
 
 import { sql, sqlOne } from '@/lib/db/client';
+import { classifyReach, REACH_SELECT_SQL, reachWhereSql, type Reach } from '@/lib/reach';
 import type { Billing, RawTicketUrl, TasteSignal } from '@/lib/types';
 
 export interface MetroRow {
@@ -26,6 +27,10 @@ export interface MatchRow {
   billing: Billing;
   score: number;
   sources: TasteSignal[];
+  /** Ev konumu ayarliysa duz hat mesafesi (metre), yoksa null. */
+  distanceMeters: number | null;
+  /** Ev konumu ayarliysa en dar yakinlik kademesi, yoksa undefined. */
+  reach?: Reach;
 }
 
 export interface UpcomingRow {
@@ -49,6 +54,9 @@ interface MatchDbRow {
   billing: Billing;
   score: number;
   sources: TasteSignal[];
+  distance_m: number | null;
+  same_city: boolean;
+  same_country: boolean;
 }
 
 interface UpcomingDbRow {
@@ -61,12 +69,66 @@ interface UpcomingDbRow {
   headliners: string[];
 }
 
+export interface HomeLocation {
+  label: string | null;
+  lat: number | null;
+  lng: number | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  setAt: Date | null;
+}
+
+export interface MatchQuery {
+  lastfmUser: string;
+  /** Verilmezse tum metrolar; `country`/`all` kademesinde metro sinirlamak anlamsiz. */
+  metroSlug?: string;
+  reach?: Reach;
+  home?: HomeLocation;
+}
+
+export async function homeForUser(lastfmUser: string): Promise<HomeLocation | undefined> {
+  const row = await sqlOne<{
+    home_label: string | null;
+    home_lat: number | null;
+    home_lng: number | null;
+    home_city: string | null;
+    home_state: string | null;
+    home_country: string | null;
+    home_set_at: Date | null;
+  }>(
+    `SELECT home_label, home_lat, home_lng, home_city, home_state, home_country, home_set_at
+       FROM app_user WHERE lower(lastfm_user) = lower($1)`,
+    [lastfmUser],
+  );
+  if (!row) return undefined;
+  return {
+    label: row.home_label,
+    lat: row.home_lat,
+    lng: row.home_lng,
+    city: row.home_city,
+    state: row.home_state,
+    country: row.home_country,
+    setAt: row.home_set_at,
+  };
+}
+
 /**
- * Kullanicinin taste profili ile metrodaki gelecek etkinliklerin kesisimi.
+ * Kullanicinin taste profili ile gelecek etkinliklerin kesisimi.
+ *
  * Bir etkinlikte kullanicinin birden fazla sanatcisi calabilir; DISTINCT ON ile
  * etkinlik basina en yuksek skorlu eslesme secilir, listede satir tekrari olmaz.
+ *
+ * Ev konumu verilmisse her satira duz hat mesafesi ve yakinlik kademesi eklenir;
+ * `reach` verilmisse SQL tarafinda filtrelenir (bkz. `src/lib/reach.ts`).
+ * Ev konumu yoksa `reach` yok sayilir — filtre uygulanacak referans nokta yok.
  */
-export async function matchesForUser(lastfmUser: string, metroSlug: string): Promise<MatchRow[]> {
+export async function matchesForUser(query: MatchQuery): Promise<MatchRow[]> {
+  const home = query.home;
+  const hasHome = home?.lat !== null && home?.lat !== undefined && home.lng !== null;
+  const reach = hasHome ? (query.reach ?? 'all') : 'all';
+  const where = reachWhereSql(reach);
+
   const rows = await sql<MatchDbRow>(
     `SELECT * FROM (
        SELECT DISTINCT ON (e.id)
@@ -79,7 +141,8 @@ export async function matchesForUser(lastfmUser: string, metroSlug: string): Pro
          a.name          AS artist_name,
          ea.billing      AS billing,
          ut.score        AS score,
-         ut.sources      AS sources
+         ut.sources      AS sources,
+         ${REACH_SELECT_SQL}
        FROM app_user u
        JOIN user_taste   ut ON ut.user_id = u.id
        JOIN artist       a  ON a.id = ut.artist_id
@@ -88,13 +151,21 @@ export async function matchesForUser(lastfmUser: string, metroSlug: string): Pro
        JOIN venue        v  ON v.id = e.venue_id
        JOIN metro_area   m  ON m.id = e.metro_area_id
        WHERE lower(u.lastfm_user) = lower($1)
-         AND m.slug = $2
+         AND ($6::text IS NULL OR m.slug = $6)
          AND e.starts_at > now()
          AND e.status <> 'cancelled'
+         ${where ? `AND (${where})` : ''}
        ORDER BY e.id, ut.score DESC, ea.position ASC
      ) matched
-     ORDER BY score DESC, starts_at ASC`,
-    [lastfmUser, metroSlug],
+     ORDER BY score DESC, distance_m ASC NULLS LAST, starts_at ASC`,
+    [
+      query.lastfmUser,
+      home?.lat ?? null,
+      home?.lng ?? null,
+      home?.city ?? null,
+      home?.country ?? null,
+      query.metroSlug ?? null,
+    ],
   );
 
   return rows.map((r) => ({
@@ -108,6 +179,8 @@ export async function matchesForUser(lastfmUser: string, metroSlug: string): Pro
     billing: r.billing,
     score: r.score,
     sources: r.sources,
+    distanceMeters: r.distance_m,
+    reach: hasHome ? classifyReach(r.distance_m, r.same_city, r.same_country) : undefined,
   }));
 }
 

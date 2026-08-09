@@ -110,7 +110,7 @@ async function main(): Promise<void> {
   }
   console.log(`    ${headliners.length} sanatci icin taste yazildi`);
 
-  const matches = await matchesForUser(LASTFM_USER, metro.slug);
+  const matches = await matchesForUser({ lastfmUser: LASTFM_USER, metroSlug: metro.slug });
   console.log(`    matchesForUser -> ${matches.length} satir`);
   for (const m of matches) {
     console.log(

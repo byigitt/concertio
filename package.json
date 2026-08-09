@@ -16,7 +16,9 @@
     "faz0": "tsx --env-file-if-exists=.env.local scripts/faz0.ts",
     "smoke": "tsx --env-file-if-exists=.env.local scripts/smoke.ts",
     "test:pipeline": "tsx --env-file-if-exists=.env.local scripts/test-pagination.ts",
-    "check:lastfm": "tsx --env-file-if-exists=.env.local scripts/check-lastfm.ts"
+    "check:lastfm": "tsx --env-file-if-exists=.env.local scripts/check-lastfm.ts",
+    "check:geocode": "tsx --env-file-if-exists=.env.local scripts/check-geocode.ts",
+    "test:reach": "tsx --env-file-if-exists=.env.local scripts/test-reach.ts"
   },
   "dependencies": {
     "next": "16.3.0",

@@ -1,4 +1,13 @@
-import { listMetros, matchesForUser, metroBySlug, upcomingInMetro } from '@/lib/queries';
+import { HomePanel } from '@/app/me/home-panel';
+import { hasEditAccess, locationFeatureEnabled } from '@/lib/edit-access';
+import { formatDistance, isReach, REACH_ORDER, REACH_TIERS, type Reach } from '@/lib/reach';
+import {
+  homeForUser,
+  listMetros,
+  matchesForUser,
+  metroBySlug,
+  upcomingInMetro,
+} from '@/lib/queries';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,9 +28,9 @@ const timeFmt = new Intl.DateTimeFormat('tr-TR', {
 export default async function MePage({
   searchParams,
 }: {
-  searchParams: Promise<{ u?: string; metro?: string }>;
+  searchParams: Promise<{ u?: string; metro?: string; reach?: string }>;
 }) {
-  const { u, metro: metroParam } = await searchParams;
+  const { u, metro: metroParam, reach: reachParam } = await searchParams;
   const lastfmUser = u?.trim();
   const metros = await listMetros();
 
@@ -90,7 +99,22 @@ export default async function MePage({
     );
   }
 
-  const matches = await matchesForUser(lastfmUser, metro.slug);
+  // Ev konumu hassas veri: hem okuma hem yazma edit secret'i gerektiriyor
+  // (src/lib/edit-access.ts). Erisim yoksa konum hic sorgulanmiyor.
+  const canEditLocation = locationFeatureEnabled() && (await hasEditAccess());
+  const home = canEditLocation ? await homeForUser(lastfmUser) : undefined;
+  const hasHome = home?.lat !== null && home?.lat !== undefined;
+  const reach: Reach = hasHome && isReach(reachParam) ? reachParam : 'all';
+
+  // Yakinlik filtresi metro sinirini asabilir: "ayni ulke" secildiyse tek
+  // metroya kisitlamak filtreyi anlamsiz kilar.
+  const crossMetro = hasHome && (reach === 'country' || reach === 'all');
+  const matches = await matchesForUser({
+    lastfmUser,
+    metroSlug: crossMetro ? undefined : metro.slug,
+    reach,
+    home,
+  });
   const metroHasEvents = matches.length > 0 || (await upcomingInMetro(metro.slug, 1)).length > 0;
 
   return (
@@ -115,6 +139,37 @@ export default async function MePage({
           </p>
         ) : null}
       </header>
+
+      <HomePanel
+        lastfmUser={lastfmUser}
+        featureEnabled={locationFeatureEnabled()}
+        hasAccess={canEditLocation}
+        homeLabel={home?.label ?? null}
+      />
+
+      {hasHome ? (
+        <nav aria-label="Yakinlik filtresi" className="flex flex-wrap gap-x-5 gap-y-2">
+          {REACH_ORDER.map((tier) => {
+            const params = new URLSearchParams({ u: lastfmUser, metro: metro.slug, reach: tier });
+            const active = tier === reach;
+            return (
+              <a
+                key={tier}
+                href={`/me?${params.toString()}`}
+                aria-current={active ? 'page' : undefined}
+                title={REACH_TIERS[tier].hint}
+                className={
+                  active
+                    ? 'border-b border-accent pb-1 text-sm text-accent'
+                    : 'border-b border-transparent pb-1 text-sm text-muted transition-colors hover:text-paper'
+                }
+              >
+                {REACH_TIERS[tier].label}
+              </a>
+            );
+          })}
+        </nav>
+      ) : null}
 
       {matches.length === 0 ? (
         <section className="max-w-xl space-y-4 border-l-2 border-accent-dim pl-5">
@@ -176,6 +231,18 @@ export default async function MePage({
                     {match.venueName}
                     {match.venueCity ? ` · ${match.venueCity}` : ''}
                   </p>
+                  {match.reach ? (
+                    <p className="text-xs text-faint">
+                      <span className="uppercase tracking-[0.14em]">
+                        {REACH_TIERS[match.reach].label}
+                      </span>
+                      {formatDistance(match.distanceMeters) ? (
+                        <span className="ml-2 font-mono tabular-nums">
+                          {formatDistance(match.distanceMeters)}
+                        </span>
+                      ) : null}
+                    </p>
+                  ) : null}
                   {match.title && match.title !== match.artistName ? (
                     <p className="text-xs text-faint">{match.title}</p>
                   ) : null}

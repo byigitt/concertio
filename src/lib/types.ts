@@ -9,7 +9,9 @@ export type SourceId =
   | 'songkick'
   | 'lastfm'
   | 'spotify'
-  | 'musicbrainz';
+  | 'musicbrainz'
+  /** OSM Nominatim geocoder — etkinlik kaynagi degil, adres cozumleyici. */
+  | 'nominatim';
 
 export type TasteSignal =
   | 'lastfm_top'
