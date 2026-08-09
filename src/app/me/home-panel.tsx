@@ -69,7 +69,7 @@ export function HomePanel({
                 </button>
               </p>
               <p id="address-hint">
-                example: <code>Mission District, San Francisco</code>. adding the city and
+                example: <code>mission district, san francisco</code>. adding the city and
                 country makes the lookup unambiguous. you do not have to give a street number; a
                 neighbourhood is enough.
               </p>
