@@ -10,6 +10,9 @@
  *
  * Kullanim: `pnpm dev` acikken `pnpm test:copy` (ya da BASE_URL ver).
  */
+// Top-level `await` icin dosya modul olmali (TS1375); import'u yok, o yuzden bu.
+export {};
+
 const BASE = process.env.BASE_URL ?? 'http://localhost:3000';
 
 /**
