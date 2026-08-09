@@ -23,6 +23,7 @@
     "test:jobs": "tsx --env-file-if-exists=.env.local scripts/test-jobs.ts",
     "test:redaction": "tsx scripts/test-redaction.ts",
     "test:strings": "tsx --env-file-if-exists=.env.local scripts/check-strings.ts",
+    "test:copy": "tsx scripts/check-copy.ts",
     "check:lastfm": "tsx --env-file-if-exists=.env.local scripts/check-lastfm.ts",
     "check:geocode": "tsx --env-file-if-exists=.env.local scripts/check-geocode.ts"
   },

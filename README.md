@@ -45,6 +45,7 @@ pnpm test:reach     # NO API key, NO network — distance + reach tier tests
 pnpm test:strings   # NO API key, NO network — emitted UI strings english?
 pnpm test:jobs      # NO API key, NO network (needs DB) — queue claim/lease/resume tests
 pnpm test:redaction # NO API key, NO network, NO DB — api key never lands in error text
+pnpm test:copy      # NO API key (needs pnpm dev running) — page copy within word caps
 pnpm check:lastfm   # live Last.fm check: signal count + MBID fill rate
 pnpm check:geocode  # live Nominatim check: address -> coordinates
 pnpm faz0           # one user + one metro, end to end real data (needs both API keys)
@@ -192,12 +193,15 @@ Browser defaults are the design. Consequences:
   click an empty filter. Empty states say what to do and link to widen the filter. `role="status"`
   messages echo the resolved address back. On mobile page never overflows sideways, table scrolls
   inside itself.
-- **Caveman copy.** Prose is fragments, not sentences: articles, filler and pleasantries dropped,
-  technical terms exact. Every page audited by counting rendered text nodes with tables, nav,
-  header, footer excluded, and no prose text node over 9 words survives except one 11-word queue
-  explainer (and real tour titles, which are data). Prose words per page after the pass: `/` 145 →
-  98, `/jobs` 68 → 58, `/me` 92 → 88, `/me` no-user 46 → 43, `/metro` 57 → 54. Tables carry the
-  volume (267–274 words), which is the point: data dense, copy thin.
+- **Caveman copy, enforced.** Prose is fragments, not sentences: articles, filler and restated
+  context dropped, technical terms exact. Numbers come from `pnpm test:copy`, not from eyeballing —
+  the first hand-measured figures went stale within one edit. Gate fetches each route, strips
+  `table`/`nav`/`header`/`footer`/`script`, and fails on two rules: prose words per route, and any
+  single text block over 12 words. Current: `/` 69/75, `/jobs` 28/35, `/me` 49/55, `/me` no-user
+  15/20, `/metro` 24/30. Caps sit just above actual, so growth trips the gate instead of sliding;
+  fixing means rewriting copy, not raising the cap. Verified it bites: padding the queue explainer
+  to a 33-word sentence gives `exit=1` on both rules. Tables carry the volume (267–274 words) —
+  that is the point, data dense and copy thin.
 
 ## Layout
 
