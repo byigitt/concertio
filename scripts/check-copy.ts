@@ -60,6 +60,24 @@ const words = (s: string): number => s.split(/\s+/).filter(Boolean).length;
 let failures = 0;
 const rows: string[] = [];
 
+/**
+ * Dogru uygulamaya baktigimizi teyit et. `next dev` port 3000 mesgulse sessizce
+ * 3001'e kayiyor, yani 3000'de baska bir proje olabilir; onun metnini olcup
+ * "gecti" demek en kotu sonuc. Isim yoksa hemen dur.
+ */
+const rootHtml = await fetch(BASE)
+  .then((r) => r.text())
+  .catch((e: unknown) => {
+    console.error(`FAIL ${BASE} unreachable: ${(e as Error).message}`);
+    console.error('     start the app first, or pass BASE_URL=http://localhost:<port>');
+    process.exit(1);
+  });
+if (!/concertio/i.test(rootHtml)) {
+  console.error(`FAIL ${BASE} does not look like concertio (no "concertio" in html)`);
+  console.error('     another app is probably on that port; pass BASE_URL=http://localhost:<port>');
+  process.exit(1);
+}
+
 for (const [route, cap] of Object.entries(CAPS)) {
   const response = await fetch(`${BASE}${route}`);
   if (!response.ok) {

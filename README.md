@@ -4,6 +4,16 @@ Match Last.fm taste against upcoming concerts in area. First target SF Bay Area,
 to whole US. Research notes live in `docs/`, gitignored and local — so decision reasons are inlined
 below, not linked.
 
+![concertio demo: queue a last.fm username from the site, worker leases the job, matches appear, then home location unlocks distance filters](media/demo.gif)
+
+70 s, no cut, real data ([mp4](media/demo.mp4)). What it shows, in order: queue `ozgcetiin` from the
+landing page → worker leases the job and `/jobs` counts `1/12 → 4/12 → 10/12 artists`, splitting
+across two leases → 13 matched concerts on `/me` → the home-location panel, locked, because
+`CONCERTIO_EDIT_SECRET` guards it → unlock, save `mission district, san francisco`, Nominatim echoes
+the resolved address back → distance filters appear with counts (`walking (0)`, `transit (5)`,
+`day trip (13)`) and every row gains a km column. Recorded at 12 fps straight from the page, so what
+you see is the served HTML, not a mockup.
+
 - Event data: **Ticketmaster Discovery** (primary). Songkick out: API ToS forbids caching past 24 h
   and forbids mixing its data with any other concert source, so a multi-source app is illegal there.
 - Taste data: **Last.fm** (primary, no OAuth — `api_key` + username is enough). Spotify optional:
@@ -90,6 +100,20 @@ sensitive, so location feature demands `CONCERTIO_EDIT_SECRET` for both read and
 unset = feature fully off (fail closed). sha256 of verified secret sits in httpOnly cookie.
 Whitelisting username would not do: username public, secret not. Phase 1 brings Auth.js, then
 `src/lib/edit-access.ts` dies and ownership comes from session.
+
+Turning it on locally, exactly what the demo does:
+
+```bash
+echo "CONCERTIO_EDIT_SECRET=$(openssl rand -hex 24)" >> .env.local
+pnpm dev      # restart: env is read server-side at request time, not in the browser
+```
+
+Then open `/me?u=<lastfm>&metro=sf-bay-area`. With the variable unset there is no panel at all —
+not a disabled input, no "coming soon" — because a half-open door invites people to try it. With it
+set you get an `access key` field; the typed value is compared, then its sha256 goes into an
+httpOnly cookie, so the secret itself never rides along in a URL or in `localStorage`. Save an
+address like `mission district, san francisco` (city and country help, street number does not) and
+Nominatim's resolved address is echoed back so you can tell a wrong hit immediately.
 
 ### Incomplete set and window rules (for destructive work)
 
