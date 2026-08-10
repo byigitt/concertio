@@ -6,13 +6,16 @@ below, not linked.
 
 ![concertio demo: queue a last.fm username from the site, worker leases the job, matches appear, then home location unlocks distance filters](media/demo.gif)
 
-70 s, no cut, real data ([mp4](media/demo.mp4)). What it shows, in order: queue `ozgcetiin` from the
-landing page → worker leases the job and `/jobs` counts `1/12 → 4/12 → 10/12 artists`, splitting
-across two leases → 13 matched concerts on `/me` → the home-location panel, locked, because
-`CONCERTIO_EDIT_SECRET` guards it → unlock, save `mission district, san francisco`, Nominatim echoes
-the resolved address back → distance filters appear with counts (`walking (0)`, `transit (5)`,
-`day trip (13)`) and every row gains a km column. Recorded at 12 fps straight from the page, so what
-you see is the served HTML, not a mockup.
+28 s, fast-forwarded ([mp4](media/demo.mp4)) — real-time cut, 70 s, uncut:
+[**demo-realtime.mp4**](media/demo-realtime.mp4). Waiting is sped up hardest (queue polling 6×),
+typing and reading less (2.5–3×); the cards are not sped up at all so they stay readable.
+
+In order: queue `ozgcetiin` from the landing page → worker leases the job and `/jobs` counts
+`1/12 → 4/12 → 10/12 artists`, splitting across two leases → 13 matched concerts on `/me` → the
+home-location panel, locked, because `CONCERTIO_EDIT_SECRET` guards it → unlock, save
+`mission district, san francisco`, Nominatim echoes the resolved address back → distance filters
+appear with counts (`walking (0)`, `transit (5)`, `day trip (13)`) and every row gains a km column.
+Captured at 12 fps straight from the served page, so this is the real HTML, not a mockup.
 
 - Event data: **Ticketmaster Discovery** (primary). Songkick out: API ToS forbids caching past 24 h
   and forbids mixing its data with any other concert source, so a multi-source app is illegal there.
